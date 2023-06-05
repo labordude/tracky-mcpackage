@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="Sqlite" id="Project-150d" database="Sqlite" >
+	<schema name="Default" >
+		<table name="alembic_version" spec="" >
+			<column name="version_num" type="VARCHAR" length="32" jt="12" mandatory="y" />
+			<index name="alembic_version_pkc" unique="PRIMARY_KEY" >
+				<column name="version_num" />
+			</index>
+		</table>
+		<table name="customers" spec="" >
+			<column name="id" type="INTEGER" jt="4" mandatory="y" />
+			<column name="name" type="VARCHAR" jt="12" mandatory="y" />
+			<column name="address" type="VARCHAR" jt="12" mandatory="y" />
+			<column name="address_x" type="INTEGER" jt="4" mandatory="y" />
+			<column name="address_y" type="INTEGER" jt="4" mandatory="y" />
+			<index name="pk_customers" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+		</table>
+		<table name="destinations" spec="" >
+			<column name="id" type="INTEGER" jt="4" mandatory="y" />
+			<column name="name" type="VARCHAR" jt="12" mandatory="y" />
+			<column name="address" type="VARCHAR" jt="12" mandatory="y" />
+			<column name="address_x" type="INTEGER" jt="4" mandatory="y" />
+			<column name="address_y" type="INTEGER" jt="4" mandatory="y" />
+			<index name="pk_destinations" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+		</table>
+		<table name="drivers" spec="" >
+			<column name="id" type="INTEGER" jt="4" mandatory="y" />
+			<column name="address_x" type="INTEGER" jt="4" mandatory="y" />
+			<column name="address_y" type="INTEGER" jt="4" mandatory="y" />
+			<column name="name" type="VARCHAR" jt="12" mandatory="y" />
+			<index name="pk_drivers" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+		</table>
+		<table name="packages" spec="" >
+			<column name="id" type="INTEGER" jt="4" mandatory="y" />
+			<column name="status" type="VARCHAR" jt="12" mandatory="y" />
+			<column name="customer_id" type="INTEGER" jt="4" />
+			<column name="destination_id" type="INTEGER" jt="4" />
+			<column name="driver_id" type="INTEGER" jt="4" />
+			<index name="pk_packages" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<fk name="FK_packages customers" to_schema="Default" to_table="customers" options="" >
+				<fk_column name="customer_id" pk="id" />
+			</fk>
+			<fk name="FK_packages destinations" to_schema="Default" to_table="destinations" options="" >
+				<fk_column name="destination_id" pk="id" />
+			</fk>
+			<fk name="FK_packages drivers" to_schema="Default" to_table="drivers" options="" >
+				<fk_column name="driver_id" pk="id" />
+			</fk>
+		</table>
+	</schema>
+	<connector name="Sqlite" database="Sqlite" driver_class="org.sqlite.JDBC" driver_jar="sqlite-jdbc-3.40.0.0.jar" driver_desc="Standard" host="localhost" port="7210" instance="/Users/michaelloomis/repos/Development/code/phase-3-project2/lib/fpds.db" useSystemProxy="false" />
+	<layout name="Main Layout" id="Layout-1e04" show_relation="columns" >
+		<entity schema="Default" name="alembic_version" color="3986C1" x="528" y="224" />
+		<entity schema="Default" name="customers" color="BED3F4" x="288" y="224" />
+		<entity schema="Default" name="destinations" color="BED3F4" x="288" y="448" />
+		<entity schema="Default" name="drivers" color="BED3F4" x="48" y="448" />
+		<entity schema="Default" name="packages" color="BED3F4" x="48" y="224" />
+		<callout x="48" y="80" pointer="Round" >
+			<comment><![CDATA[This is a layout. 
+- Double-click table headers, columns, or foreign keys to edit 
+- Drag tables to the layout from the structure tree, or 
+   add them by pressing the arrow icon near columns 
+- Create multiple layouts with the same or different tables 
+- Right-click the layout to create new tables]]></comment>
+		</callout>
+		<group name="packages" color="ECF0F7" >
+			<entity schema="Default" name="packages" />
+			<entity schema="Default" name="customers" />
+			<entity schema="Default" name="destinations" />
+			<entity schema="Default" name="drivers" />
+		</group>
+	</layout>
+	<layout name="~Layout with Sample Tools" id="Layout-4cd" show_column_type="y" show_relation="columns" >
+		<entity schema="Default" name="alembic_version" color="3986C1" x="624" y="48" />
+		<entity schema="Default" name="customers" color="BED3F4" x="336" y="48" />
+		<entity schema="Default" name="destinations" color="BED3F4" x="336" y="272" />
+		<entity schema="Default" name="drivers" color="BED3F4" x="48" y="272" />
+		<entity schema="Default" name="packages" color="BED3F4" x="48" y="48" />
+		<script name="SQL Editor" id="Editor-1a85" language="SQL" >
+			<string><![CDATA[SELECT
+	id, status, customer_id, destination_id, driver_id
+FROM
+	packages s;]]></string>
+		</script>
+		<browser id="Browse-24b" name="Relational Data Explorer" confirm_updates="y" >
+			<browse_table schema="Default" entity="packages" x="20" y="20" width="400" height="300" >
+				<browse_table schema="Default" entity="customers" fk="FK_packages customers" x="440" y="20" width="500" height="350" record_view="y" />
+			</browse_table>
+		</browser>
+		<query id="Query-19b2" name="Query Builder" >
+			<query_table schema="Default" name="packages" alias="p" x="48" y="48" >
+				<column name="id" />
+				<column name="status" />
+				<column name="customer_id" />
+				<column name="destination_id" />
+				<column name="driver_id" />
+				<query_table schema="Default" name="customers" alias="c" x="288" y="48" fk="FK_packages customers" type="Inner Join" >
+					<column name="id" />
+					<column name="name" />
+					<column name="address" />
+					<column name="address_x" />
+					<column name="address_y" />
+				</query_table>
+			</query_table>
+		</query>
+		<form name="Report" id="Report-119a" template="Page" css="container-fluid" view="frame" >
+			<var name="samplePageNumber" type="4" value="0" mandatory="n" />
+			<var name="sampleRecordsPerPage" type="4" value="100" mandatory="n" />
+			<body name="Body" template="Grid" pos="0,0,0,0,f,f" layout="{{-2,-2,-2,-2,-1},{-2,-2,-2,-2}}" scroll="n" html="n" >
+				<cell type="label" name="Packages Data" template="H3" pos="0,0,1,0,l,c" />
+				<cell type="chart" name="Pie" template="Pie" pos="0,1,4,1,l,c" max_records="20" >
+					<form_script type="DataSource" language="SQL" >
+						<var name="id" type="4" />
+						<var name="status" />
+						<var name="customer_id" type="4" />
+						<var name="destination_id" type="4" />
+						<var name="driver_id" type="4" />
+						<script ><![CDATA[SELECT * FROM packages]]></script>
+					</form_script>
+					<param name="i0" value="status" />
+					<param name="width" value="100%" />
+					<param name="v0" value="id" />
+					<param name="title" value="Sample Chart" />
+					<param name="height" value="400px" />
+				</cell>
+				<tableview name="sample" template="Table" css="table table-striped table-sm table-hover" pos="0,2,4,2,f,f" layout="{{-2,-2,-2,-2,-2,-2},{-2,-2}}" scroll="n" html="n" header_rows="1" >
+					<form_script type="DataSource" language="SQL" >
+						<var name="id" type="4" />
+						<var name="status" />
+						<var name="customer_id" type="4" />
+						<var name="destination_id" type="4" />
+						<var name="driver_id" type="4" />
+						<script ><![CDATA[SELECT * FROM packages]]></script>
+					</form_script>
+					<cell type="label" name="id" pos="0,0,0,0,c,c" />
+					<cell type="label" name="status" pos="1,0,1,0,c,c" />
+					<cell type="label" name="customer_id" pos="2,0,2,0,c,c" />
+					<cell type="label" name="destination_id" pos="3,0,3,0,c,c" />
+					<cell type="label" name="driver_id" pos="4,0,4,0,c,c" />
+					<cell type="label" name="Button can open other pages." pos="5,0,5,0,c,c" />
+					<cell type="label" name="${id}" template="Plain" pos="0,1,0,1,l,c" />
+					<cell type="label" name="${status}" template="Plain" pos="1,1,1,1,l,c" />
+					<cell type="label" name="${customer_id}" template="Plain" pos="2,1,2,1,l,c" />
+					<cell type="label" name="${destination_id}" template="Plain" pos="3,1,3,1,l,c" />
+					<cell type="label" name="${driver_id}" template="Plain" pos="4,1,4,1,l,c" />
+					<cell type="button" name="More" template="Plain" css="btn btn-sm btn-secondary" pos="5,1,5,1,c,c" ref_id="Report-119a" />
+				</tableview>
+				<cell type="href" name="" disabled="${samplePageNumber&lt;1}" pos="0,3,0,3,l,c" glyph="bi-chevron_double_left" ref_id="Report-119a" >
+					<var name="samplePageNumber" value="0" />
+				</cell>
+				<cell type="href" name="" disabled="${samplePageNumber&lt;1}" pos="1,3,1,3,l,c" glyph="bi-chevron_left" ref_id="Report-119a" >
+					<var name="samplePageNumber" value="${Math.max(0,samplePageNumber-1)}" />
+				</cell>
+				<cell type="label" name="Page ${samplePageNumber+1}" pos="2,3,2,3,l,c" />
+				<cell type="href" name="" disabled="${!sampleHasNextPage}" pos="3,3,3,3,l,c" glyph="bi-chevron_right" ref_id="Report-119a" >
+					<var name="samplePageNumber" value="${( samplePageNumber+1 )}" />
+				</cell>
+			</body>
+		</form>
+	</layout>
+</project>
