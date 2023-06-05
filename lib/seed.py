@@ -33,7 +33,7 @@ if __name__ == "__main__":
         ]
         statuses = []
         for i in range(4):
-            status = Status(name=random.choice(status_list), description="")
+            status = Status(name=status_list[i], description="")
             session.add(status)
             session.commit()
             statuses.append(status)
@@ -53,7 +53,7 @@ if __name__ == "__main__":
                 name=random.choice(customer_names_list),
                 address=f"{fake.street_address()} {fake.city()}, TX {fake.zipcode_in_state('TX')} ",
                 address_coordinates=Point(
-                    random.randint(1, 31), random.randint(1, 31)
+                    random.randint(1, 50), random.randint(1, 50)
                 ),
             )
             session.add(customer)
@@ -61,11 +61,11 @@ if __name__ == "__main__":
             customers.append(customer)
 
         drivers = []
-        for i in range(8):
+        for i in range(10):
             driver = Driver(
                 name=fake.unique.name(),
                 start_location=Point(
-                    random.randint(1, 31), random.randint(1, 31)
+                    random.randint(1, 50), random.randint(1, 50)
                 ),
             )
             session.add(driver)
@@ -78,7 +78,7 @@ if __name__ == "__main__":
                 name=fake.unique.name(),
                 address=f"{fake.street_address()} {fake.city()}, TX {fake.zipcode_in_state('TX')} ",
                 address_coordinates=Point(
-                    random.randint(1, 31), random.randint(1, 31)
+                    random.randint(1, 50), random.randint(1, 50)
                 ),
             )
             session.add(destination)
@@ -91,7 +91,7 @@ if __name__ == "__main__":
                 status_id=random.randint(1, 4),
                 customer_id=random.randint(1, 50),
                 destination_id=random.randint(1, 50),
-                driver_id=random.randint(1, 8),
+                driver_id=random.randint(1, 10),
             )
             session.add(package)
             session.commit()
