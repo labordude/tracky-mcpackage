@@ -15,6 +15,29 @@ class Point:
 engine = create_engine("sqlite:///fpds.db", echo=False)
 with Session(engine) as session:
     # [X] see a list of all packages in the system
+
+    def menu():
+        print(
+            """
+        Select a function:
+        1. Show all packages.
+        2. Show packages sorted by status.
+        3. Show all drivers.
+        4. Show packages by selected driver.
+        5. Add a new customer.
+        6. Add a new destination.
+        7. Add a new package.
+        8. Update a package's status.
+        9. Show packages by customer.
+        10. Show packages by destination.
+
+        """
+        )
+        pass
+
+    def all_drivers():
+        return session.scalars(select(Driver))
+
     def all_packages():
         statement = select(Package)
         result = session.scalars(statement)
@@ -26,7 +49,9 @@ with Session(engine) as session:
         stmt = select(Package, Status).join(Package.status).order_by(Status.id)
         result = session.execute(stmt)
         for k, g in itertools.groupby(result, lambda x: x[1]):
+            print("---------------")
             print(k.name)
+            print("---------------")
             for item in list(g):
                 print(
                     f"{item[0].id}|\t{item[0].destination.name}|\t{item[0].destination.address}"
@@ -110,6 +135,12 @@ with Session(engine) as session:
             print(
                 f"{package.id} | {package.destination.name}, {package.destination.address}"
             )
+
+    # [X] view a list of packages by customer or destination with sorting/filtering by status
+    def packages_by_destination(destination_id):
+        destination = session.get(Destination, destination_id)
+        for package in destination.destination_packages:
+            print(f"{package.id} | {package.customer.name}")
         # customer_packages = (
         #     select(Package, Customer, Status, Destination)
         #     .join(Package.customer)

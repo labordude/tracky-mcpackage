@@ -1,0 +1,41 @@
+Screen {
+  layout: grid;
+  grid-size: 4;
+}
+#sidebar {
+  tint: gray 20%;
+}
+
+#content {
+  column-span: 3;
+  tint: green 50%;
+}
+.box {
+  height: 100%;
+  border: solid white;
+}
+ListView {
+  width: 100%;
+  height: auto;
+  margin: 0 2;
+}
+
+Label {
+  padding: 1 2;
+}
+Header {
+  dock: top;
+  height: 3;
+  padding-top: 1;
+  content-align: center middle;
+  background: $primary;
+  color: white;
+}
+
+Footer {
+  dock: bottom;
+  height: 2;
+  content-align: center middle;
+  background: blue;
+  color: white;
+}
