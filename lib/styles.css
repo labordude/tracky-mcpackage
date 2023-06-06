@@ -3,9 +3,9 @@ Screen {
   grid-size: 4;
 }
 #sidebar {
+  color: white;
   tint: gray 20%;
 }
-
 #content {
   column-span: 3;
   tint: green 50%;
@@ -16,12 +16,13 @@ Screen {
 }
 ListView {
   width: 100%;
-  height: auto;
-  margin: 0 2;
+  height: 100%;
+  display: block;
 }
 
 Label {
-  padding: 1 2;
+  
+  padding: 1 1;
 }
 Header {
   dock: top;
