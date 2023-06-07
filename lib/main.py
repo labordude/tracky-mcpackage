@@ -60,6 +60,7 @@ from helpers import (
     all_destinations,
     my_packages,
     packages_by_status,
+    search_by_customer,
 )
 
 logging.basicConfig(
@@ -529,19 +530,25 @@ class ShowPackages(VerticalScroll):
 
 
 class ShowCustomers(VerticalScroll):
+    search = reactive("")
+    customers = [customer for customer in search_by_customer(search)]
+
     def compose(self) -> ComposeResult:
         yield Input(placeholder="Search for a customer", id="search_customer")
         yield DataTable(id="customers")
 
     def on_mount(self) -> None:
-        customers = [customer for customer in all_customers()]
+        # customers = [customer for customer in all_customers()]
 
         table = self.query_one("#customers", DataTable)
         table.cursor_type = next(cursors)
         table.zebra_stripes = True
         table.add_columns("id", "name", "address")
-        for customer in customers:
+        for customer in self.customers:
             table.add_row(customer.id, customer.name, customer.address)
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        self.search = event.value
 
     def key_c(self):
         table = self.query_one("#customers", DataTable)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from models import Driver, Destination, Customer, Package, Status
-from sqlalchemy import create_engine, select, update
+from sqlalchemy import create_engine, select, update, or_
 from sqlalchemy.orm import Session
 import itertools
 import dataclasses
@@ -46,6 +46,11 @@ with Session(engine) as session:
 
     def all_destinations():
         return session.scalars(select(Destination))
+
+    def search_by_customer(search):
+        return session.scalars(
+            select(Customer).where(Customer.name.like(search))
+        )
 
     # [X] see a list of all packages by status
     def packages_by_status(status_id):
