@@ -65,6 +65,7 @@ from helpers import (
     packages_by_status,
     search_by_customer,
     search_by_destination,
+    search_packages,
 )
 
 logging.basicConfig(
@@ -147,18 +148,18 @@ class Menu(VerticalScroll):
             id="all_packages",
             classes="menu",
         )
-        yield Button(
-            "In_Transit",
-            name="in_transit",
-            id="in_transit",
-            classes="menu",
-        )
-        yield Button(
-            "Lost_and_Found",
-            name="lost_and_found",
-            id="lost_and_found",
-            classes="menu",
-        )
+        # yield Button(
+        #     "In_Transit",
+        #     name="in_transit",
+        #     id="in_transit",
+        #     classes="menu",
+        # )
+        # yield Button(
+        #     "Lost_and_Found",
+        #     name="lost_and_found",
+        #     id="lost_and_found",
+        #     classes="menu",
+        # )
         yield Button(
             "Customers",
             name="all_customers",
@@ -183,6 +184,12 @@ class Menu(VerticalScroll):
             id="add_destination",
             classes="menu",
         )
+        yield Button(
+            "Show Modal",
+            name="show_modal",
+            id="show_modal",
+            classes="menu",
+        )
 
     # def on_list_item_clicked(self, event: ListView.Selected) -> None:
     #     print(self.item.id)
@@ -197,20 +204,18 @@ class Menu(VerticalScroll):
         ).current = event.button.id
 
 
+class ShowModal(Widget):
+    def compose(self) -> ComposeResult:
+        yield Button("Show Something")
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        self.app.push_screen(UpdatePackage())
+
+
 class Home(Static):
     def compose(self) -> ComposeResult:
         driver = session.get(Driver, current_driver)
         yield Label(f"Hello, {driver.name}")
-
-        # yield ShowCustomers()
-        # yield ShowDestinations()
-
-
-class Submit(Button):
-    clicked: Reactive[RenderableType] = Reactive(False)
-
-    def on_click(self) -> None:
-        self.clicked = True
 
 
 class CustomerInfo(Widget):
@@ -361,9 +366,6 @@ class AddDestination(Widget):
         )
 
 
-cursors = cycle(["column", "row", "cell"])
-
-
 class ShowDrivers(VerticalScroll):
     def compose(self) -> ComposeResult:
         yield DataTable(id="drivers")
@@ -372,15 +374,15 @@ class ShowDrivers(VerticalScroll):
         drivers = [driver for driver in all_drivers()]
 
         table = self.query_one("#drivers", DataTable)
-        table.cursor_type = next(cursors)
+        table.cursor_type = "row"
         table.zebra_stripes = True
         table.add_columns("id", "name")
         for driver in drivers:
             table.add_row(driver.id, driver.name)
 
-    def key_c(self):
-        table = self.query_one("#drivers", DataTable)
-        table.cursor_type = next(cursors)
+    # def key_c(self):
+    #     table = self.query_one("#drivers", DataTable)
+    #     table.cursor_type = "row"
 
 
 class ShowMyPackages(VerticalScroll):
@@ -391,7 +393,7 @@ class ShowMyPackages(VerticalScroll):
         packages = [package for package in my_packages(current_driver)]
 
         table = self.query_one("#my_packages", DataTable)
-        table.cursor_type = next(cursors)
+        table.cursor_type = "row"
         table.zebra_stripes = True
         table.add_columns("id", "customer", "destination")
         for package in packages:
@@ -399,28 +401,17 @@ class ShowMyPackages(VerticalScroll):
                 package.id, package.customer.name, package.destination.name
             )
 
-    def key_c(self):
-        table = self.query_one("#my_packages", DataTable)
-        table.cursor_type = next(cursors)
+    # def key_c(self):
+    #     table = self.query_one("#my_packages", DataTable)
+    #     table.cursor_type = "row"
 
 
 class UpdatePackage(ModalScreen):
     """update a package from this screen"""
 
-    def __init__(self):
-        # self.package_id = package_id
-        # self.customer = package_customer
-        # self.destination = package_dest
-        # self.status = package_status
-        pass
-
     def compose(self) -> ComposeResult:
         yield Grid(
             Label("Hello!"),
-            # Label(str(self.package_id), id="question"),
-            # Label(str(self.customer)),
-            # Label(str(self.destination)),
-            # Label(str(self.status)),
             Button("Quit", variant="error", id="quit"),
             Button("Cancel", variant="primary", id="cancel"),
             id="dialog",
@@ -431,17 +422,23 @@ class UpdatePackage(ModalScreen):
 
 
 class ShowPackagesNew2(Widget):
+    search = ""
+
     def compose(self) -> ComposeResult:
         with TabbedContent("All", "In Transit", "Lost", id="package_filter"):
-            yield DataTable(id="packages")
-            yield ShowPackagesInTransit()
-            yield ShowLostAndFound()
+            with TabPane("All", id="all_packages", classes="clear_css"):
+                yield Input(placeholder="Search...", id="search_all_packages")
+                yield DataTable(id="packages", classes="clear_css")
+            with TabPane("In Transit", id="in_transit", classes="clear_css"):
+                yield ShowPackagesInTransit(classes="clear_css")
+            with TabPane("Lost", id="packages_lost", classes="clear_css"):
+                yield ShowLostAndFound(classes="clear_css")
 
     def on_mount(self) -> None:
         packages = [package for package in all_packages()]
 
         table = self.query_one("#packages", DataTable)
-        table.cursor_type = next(cursors)
+        table.cursor_type = "row"
         table.zebra_stripes = True
         table.add_columns("id", "status", "customer", "destination")
         for package in packages:
@@ -455,6 +452,39 @@ class ShowPackagesNew2(Widget):
     def action_show_tab(self, tab: str) -> None:
         """Switch to a new tab."""
         self.get_child_by_type("#package_filter", TabbedContent).active = tab
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        self.search = event.value
+        self.update_filter()
+
+    def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        table = self.query_one("#packages", DataTable)
+        row_data = table.get_row(row_key=event.row_key)
+        self.post_message(row_data)
+        # self.app.push_screen(UpdatePackage(row_data=row_data))
+
+    def update_filter(self) -> None:
+        packages = [
+            package
+            for package in all_packages()
+            if (
+                self.search.upper() in package.customer.name.upper()
+                or self.search.upper() in package.destination.name.upper()
+            )
+        ]
+
+        table = self.query_one("#packages", DataTable)
+        table.clear(columns=True)
+        table.cursor_type = "row"
+        table.zebra_stripes = True
+        table.add_columns("id", "status", "customer", "destination")
+        for package in packages:
+            table.add_row(
+                package.id,
+                package.status.name,
+                package.customer.name,
+                package.destination.name,
+            )
 
     # def on_tabs_tab_activated(self, event: Tabs.Clicked):
     #     pass
@@ -475,8 +505,6 @@ class ShowPackagesNew2(Widget):
 
 
 class ShowPackagesNew(Widget):
-    SCREENS = {"UpdatePackage": UpdatePackage()}
-
     def compose(self) -> ComposeResult:
         with Horizontal(id="buttons"):
             yield Button("All", id="all_packages")
@@ -495,7 +523,7 @@ class ShowPackagesNew(Widget):
         packages = [package for package in all_packages()]
 
         table = self.query_one("#packages", DataTable)
-        table.cursor_type = next(cursors)
+        table.cursor_type = "row"
         table.zebra_stripes = True
         table.add_columns("id", "status", "customer", "destination")
         for package in packages:
@@ -505,9 +533,6 @@ class ShowPackagesNew(Widget):
                 package.customer.name,
                 package.destination.name,
             )
-
-    def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
-        self.app.push_screen("UpdatePackage")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         print(self.screen.tree)
@@ -541,6 +566,8 @@ Error: 0E : 016F : BFF9B3D4
 
 
 class ShowLostAndFound(VerticalScroll):
+    search = ""
+
     def compose(self) -> ComposeResult:
         yield Input(placeholder="Search...", id="search_packages")
         yield DataTable(id="packages_lost")
@@ -549,7 +576,7 @@ class ShowLostAndFound(VerticalScroll):
         packages = [package for package in packages_by_status(4)]
 
         table = self.query_one("#packages_lost", DataTable)
-        table.cursor_type = next(cursors)
+        table.cursor_type = "row"
         table.zebra_stripes = True
         table.add_columns("id", "status", "customer", "destination")
         for package in packages:
@@ -560,27 +587,52 @@ class ShowLostAndFound(VerticalScroll):
                 package.destination.name,
             )
 
-    def sort(self, id):
-        return self
+    def on_input_changed(self, event: Input.Changed) -> None:
+        self.search = event.value
+        self.update_filter()
 
-    async def on_input_changed(self, message: Input.Changed) -> None:
-        pass
+    def update_filter(self) -> None:
+        packages = [
+            package
+            for package in packages_by_status(4)
+            if (
+                self.search.upper() in package.customer.name.upper()
+                or self.search.upper() in package.destination.name.upper()
+            )
+        ]
+
+        table = self.query_one("#packages_lost", DataTable)
+        table.clear(columns=True)
+        table.cursor_type = "row"
+        table.zebra_stripes = True
+        table.add_columns("id", "status", "customer", "destination")
+        for package in packages:
+            table.add_row(
+                package.id,
+                package.status.name,
+                package.customer.name,
+                package.destination.name,
+            )
 
     def key_c(self):
         table = self.query_one("#packages_lost", DataTable)
-        table.cursor_type = next(cursors)
+        table.cursor_type = "row"
 
 
 class ShowPackagesInTransit(VerticalScroll):
+    search = ""
+
     def compose(self) -> ComposeResult:
-        yield Input(placeholder="Search...", id="search_packages")
+        yield Input(
+            placeholder="Search...", id="search_packages", classes="search"
+        )
         yield DataTable(id="packages_in_transit")
 
     def on_mount(self) -> None:
         packages = [package for package in packages_by_status(1)]
 
         table = self.query_one("#packages_in_transit", DataTable)
-        table.cursor_type = next(cursors)
+        table.cursor_type = "row"
         table.zebra_stripes = True
         table.add_columns("id", "status", "customer", "destination")
         for package in packages:
@@ -591,15 +643,36 @@ class ShowPackagesInTransit(VerticalScroll):
                 package.destination.name,
             )
 
-    def sort(self, id):
-        return self
+    def on_input_changed(self, event: Input.Changed) -> None:
+        self.search = event.value
+        self.update_filter()
 
-    async def on_input_changed(self, message: Input.Changed) -> None:
-        pass
+    def update_filter(self) -> None:
+        packages = [
+            package
+            for package in packages_by_status(1)
+            if (
+                self.search.upper() in package.customer.name.upper()
+                or self.search.upper() in package.destination.name.upper()
+            )
+        ]
+
+        table = self.query_one("#packages_in_transit", DataTable)
+        table.clear(columns=True)
+        table.cursor_type = "row"
+        table.zebra_stripes = True
+        table.add_columns("id", "status", "customer", "destination")
+        for package in packages:
+            table.add_row(
+                package.id,
+                package.status.name,
+                package.customer.name,
+                package.destination.name,
+            )
 
     def key_c(self):
         table = self.query_one("#packages_in_transit", DataTable)
-        table.cursor_type = next(cursors)
+        table.cursor_type = "row"
 
 
 class ShowPackages(VerticalScroll):
@@ -611,7 +684,7 @@ class ShowPackages(VerticalScroll):
         packages = [package for package in all_packages()]
 
         table = self.query_one("#packages", DataTable)
-        table.cursor_type = next(cursors)
+        table.cursor_type = "row"
         table.zebra_stripes = True
         table.add_columns("id", "customer", "destination")
         for package in packages:
@@ -627,7 +700,7 @@ class ShowPackages(VerticalScroll):
 
     def key_c(self):
         table = self.query_one("#packages", DataTable)
-        table.cursor_type = next(cursors)
+        table.cursor_type = "row"
 
 
 class ShowCustomers(VerticalScroll):
@@ -646,7 +719,7 @@ class ShowCustomers(VerticalScroll):
         customers = [customer for customer in all_customers()]
 
         table = self.query_one("#customers", DataTable)
-        table.cursor_type = next(cursors)
+        table.cursor_type = "row"
         table.zebra_stripes = True
         table.add_columns("id", "name", "address")
         for customer in customers:
@@ -659,8 +732,8 @@ class ShowCustomers(VerticalScroll):
     def update_filter(self) -> None:
         customers = [customer for customer in search_by_customer(self.search)]
         table = self.query_one("#customers", DataTable)
-        table.clear()
-        table.cursor_type = next(cursors)
+        table.clear(columns=True)
+        table.cursor_type = "row"
         table.zebra_stripes = True
         table.add_columns("id", "name", "address")
         for customer in customers:
@@ -669,8 +742,8 @@ class ShowCustomers(VerticalScroll):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         customers = [customer for customer in search_by_customer(self.search)]
         table = self.query_one("#customers", DataTable)
-        table.clear()
-        table.cursor_type = next(cursors)
+        table.clear(columns=True)
+        table.cursor_type = "row"
         table.zebra_stripes = True
         table.add_columns("id", "name", "address")
         for customer in customers:
@@ -678,7 +751,7 @@ class ShowCustomers(VerticalScroll):
 
     def key_c(self):
         table = self.query_one("#customers", DataTable)
-        table.cursor_type = next(cursors)
+        table.cursor_type = "row"
 
 
 class ShowDestinations(VerticalScroll):
@@ -698,7 +771,7 @@ class ShowDestinations(VerticalScroll):
         destinations = [destination for destination in all_destinations()]
 
         table = self.query_one("#destinations", DataTable)
-        table.cursor_type = next(cursors)
+        table.cursor_type = "row"
         table.zebra_stripes = True
         table.add_columns("id", "name", "address")
         for destination in destinations:
@@ -715,8 +788,8 @@ class ShowDestinations(VerticalScroll):
             destination for destination in search_by_destination(self.search)
         ]
         table = self.query_one("#destinations", DataTable)
-        table.clear()
-        table.cursor_type = next(cursors)
+        table.clear(columns=True)
+        table.cursor_type = "row"
         table.zebra_stripes = True
         table.add_columns("id", "name", "address")
         for destination in destinations:
@@ -729,8 +802,8 @@ class ShowDestinations(VerticalScroll):
             destination for destination in search_by_destination(self.search)
         ]
         table = self.query_one("#destinations", DataTable)
-        table.clear()
-        table.cursor_type = next(cursors)
+        table.clear(columns=True)
+        table.cursor_type = "row"
         table.zebra_stripes = True
         table.add_columns("id", "name", "address")
         for destination in destinations:
@@ -740,7 +813,7 @@ class ShowDestinations(VerticalScroll):
 
     def key_c(self):
         table = self.query_one("#destinations", DataTable)
-        table.cursor_type = next(cursors)
+        table.cursor_type = "row"
 
 
 class TrackyMcPackage(App):
@@ -755,7 +828,6 @@ class TrackyMcPackage(App):
     current_driver = 4
     SCREENS = {"bsod": BSOD(), "UpdatePackage": UpdatePackage()}
     BINDINGS = [("b", "push_screen('bsod')", "BSOD")]
-    # display = reactive(Content(classes="box", id="content"))
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -784,123 +856,8 @@ class TrackyMcPackage(App):
                     yield AddCustomer()
                 with VerticalScroll(id="add_destination"):
                     yield AddDestination()
-            # yield Content(classes="box", id="content")
-
-    # def remove_content(self) -> None:
-    #     packages = self.query("ShowPackages")
-    #     if packages:
-    #         packages.remove()
-    #     drivers = self.query("ShowDrivers")
-    #     if drivers:
-    #         drivers.remove()
-
-    # def add_packages(self) -> None:
-    #     packages = ShowPackages()
-    #     # alternatives = self.query("#drivers")
-    #     # if alternatives:
-    #     #     alternatives.last().remove()
-    #     # self.query_one("#content").mount(packages)
-    #     customers = self.query("ShowCustomers")
-    #     if customers:
-    #         customers.last().remove()
-    #         drivers = self.display.query("ShowDrivers")
-    #     if drivers:
-    #         drivers.last().remove()
-    #     self.query_one("#content_switcher").mount(packages)
-    #     self.display.scroll_visible()
-
-    # def add_drivers(self) -> None:
-    #     drivers = ShowDrivers()
-    #     # alternatives = self.query("#packages")
-    #     # if alternatives:
-    #     #     alternatives.last().remove()
-    #     # self.query_one("#content").mount(drivers)
-    #     packages = self.query("ShowPackages")
-    #     if packages:
-    #         packages.last().remove()
-    #     customers = self.query("ShowCustomers")
-    #     if customers:
-    #         customers.last().remove()
-    #     self.query_one("#content_switcher").mount(drivers)
-
-    # def add_customers(self) -> None:
-    #     customers = ShowCustomers()
-    #     packages = self.query("ShowPackages")
-    #     if packages:
-    #         packages.last().remove()
-    #     drivers = self.display.query("ShowDrivers")
-    #     if drivers:
-    #         drivers.last().remove()
-    #     self.query_one("#content_switcher").mount(customers)
-
-    # def add(self):
-    #     packages = self.query("ShowPackages")
-    #     if packages:
-    #         packages.last().remove()
-    #     drivers = self.display.query("ShowDrivers")
-    #     if drivers:
-    #         drivers.last().remove()
-    #     customers = self.query("ShowCustomers")
-    #     if customers:
-    #         customers.last().remove()
-    #     self.query_one("#content_switcher").mount(AddField())
-
-    # @on(Button.Pressed)
-    # def handle_button_pressed(self, event: Button.Pressed) -> None:
-    #     if event.button.id == "packages_button":
-    #         self.add_packages()
-    #     if event.button.id == "clear_button":
-    #         self.remove_content()
-    #     if event.button.id == "drivers_button":
-    #         self.add_drivers()
-    #     if event.button.id == "customers_button":
-    #         self.add_customers()
-    #     if event.button.id == "add_button":
-    #         self.add()
-    #     if event.button.id == "exit_button":
-    #         self.exit()
-    #     if event.button.id == "submit_customer":
-    #         customer = Customer(
-    #             name=self.query_one("#new_customer_name").value,
-    #             address=self.query_one("#new_customer_address").value,
-    #             address_coordinates=Point(
-    #                 random.randint(1, 50), random.randint(1, 50)
-    #             ),
-    #         )
-    #         # session.add(customer)
-    #         # session.commit()
-    #         self.query_one("#new_customer_name").value = ""
-    #         self.query_one("#new_customer_address").value = ""
-    #         self.query_one("#new_customer_coords").value = ""
-    #         self.query_one("AddField").mount(
-    #             Label(
-    #                 f"{customer.name}, {customer.address}, {customer.address_coordinates}"
-    #             )
-    #         )
-
-    #     if event.button.id == "submit_destination":
-    #         destination = Destination(
-    #             name=self.query_one("#new_destination_name").value,
-    #             address=self.query_one("#new_destination_address").value,
-    #             address_coordinates=Point(
-    #                 random.randint(1, 50), random.randint(1, 50)
-    #             ),
-    #         )
-    #         self.query_one("#new_destination_name").value = ""
-    #         self.query_one("#new_destination_address").value = ""
-    #         self.query_one("#new_destination_coords").value = ""
-    #         self.query_one("AddField").mount(
-    #             Label(
-    #                 f"{destination.name}, {destination.address}, {destination.address_coordinates}"
-    #             )
-    #         )
-
-    # @on(Input.Submitted)
-    # def customer_name_submitted(self, event: Input.Submitted) -> None:
-    #     if event.input.id == "new_customer_name":
-    #         new_customer_name = event.value
-    #         event.input.value = ""
-    #         print(f"{new_customer_name}")
+                with VerticalScroll(id="update_package"):
+                    yield UpdatePackage()
 
     def on_load(self):
         self.log("In the log handler", pi=3.141529)

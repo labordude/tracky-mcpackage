@@ -67,6 +67,19 @@ with Session(engine) as session:
             )
         )
 
+    def search_packages(search):
+        return session.scalars(
+            select(Package)
+            .join(Package.customer)
+            .join(Package.destination)
+            .where(
+                or_(
+                    Package.destination.name.contains(search),
+                    Package.customer.name.contains(search),
+                )
+            )
+        )
+
     # [X] see a list of all packages by status
     def packages_by_status(status_id):
         return session.scalars(

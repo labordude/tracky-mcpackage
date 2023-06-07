@@ -11,7 +11,12 @@ Screen {
 .search > Input {
   width: 3fr;
 }
-
+#search_packages {
+  height: 2;
+  padding: 0 0 0 0;
+  margin: 0 0 0 0;
+  border: none;
+}
 BSOD {
   align: center middle;
   background: blue;
@@ -37,28 +42,38 @@ BSOD > Static {
 #sidebar {
   width: 1fr;
   color: white;
-  tint: gray 20%;
 }
 .content {
   column-span: 3;
-  tint: green 50%;
 }
 .buttons {
   margin-top: 0;
 }
-ContentSwitcher {
-  background: $panel;
-  border: round $primary;
-  width: 3fr;
+#package_filter {
+  height: 100vh;
 }
+#content_switcher {
+  /* background: $panel; */
+  border: round $primary;
+  width: 4fr;
+}
+#package_filter > ContentSwitcher {
+  height: 100%;
+}
+#package_filter > ContentSwitcher > Input {
+  height: 3;
+}
+.clear_css {
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
+  border: none;
+}
+
 #customer_info,
 #destination_info {
   height: auto;
 }
-DataTable {
-  background: $panel;
-  height: 100%;
-}
+
 Input {
   margin: 0 0 0 0;
 }
@@ -72,7 +87,7 @@ Home {
 
 .box {
   height: 100%;
-  border: solid white;
+  /* border: solid white; */
 }
 ListView {
   /* width: 100%;
@@ -100,4 +115,28 @@ Footer {
   content-align: center middle;
   background: blue;
   color: white;
+}
+
+UpdatePackage {
+  align: center middle;
+}
+
+#dialog {
+  grid-size: 2;
+  grid-gutter: 1 2;
+  grid-rows: 1fr 3;
+  padding: 0 1;
+  width: 60;
+  height: 11;
+}
+
+#question {
+  column-span: 2;
+  height: 1fr;
+  width: 1fr;
+  content-align: center middle;
+}
+
+Button {
+  width: 100%;
 }
