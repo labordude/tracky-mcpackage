@@ -39,10 +39,10 @@ with Session(engine) as session:
         return session.scalars(select(Driver))
 
     def all_packages():
-        statement = select(Package)
-        result = session.scalars(statement)
-        for package in result:
-            print(package.id)
+        return session.scalars(select(Package))
+    
+    def all_customers():
+        return session.scalars(select(Customer))
 
     # [X] see a list of all packages by status
     def show_all_packages_by_status():
