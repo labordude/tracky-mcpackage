@@ -1,8 +1,10 @@
 Screen {
-  layout: grid;
-  grid-size: 4;
+  padding: 0;
+  margin: 0;
 }
+
 #sidebar {
+  width: 1fr;
   color: white;
   tint: gray 20%;
 }
@@ -10,33 +12,51 @@ Screen {
   column-span: 3;
   tint: green 50%;
 }
-
+.buttons {
+  margin-top: 0;
+}
+ContentSwitcher {
+  background: $panel;
+  border: round $primary;
+  width: 3fr;
+}
+#customer_info,
+#destination_info {
+  height: auto;
+}
+DataTable {
+  background: $panel;
+}
+Input {
+  margin: 1 0 0 0;
+}
+Input.half_screen {
+  width: 1fr;
+}
 Home {
   align: center middle;
-  margin: 2 0;
+  margin: 0 0;
 }
+
 .box {
   height: 100%;
   border: solid white;
 }
 ListView {
-  width: 100%;
-  height: 100%;
+  /* width: 100%;
+  height: 100%; */
   display: block;
 }
-.menu {
-  padding: 0 0;
-  margin: 0 0;
-}
-Label {
-  padding: 1 1;
 
-  padding: 1 1;
+Label {
+  padding: 0 0;
+
+  padding: 0 0;
 }
 Header {
   dock: top;
   height: 3;
-  padding-top: 1;
+  padding-top: 0;
   content-align: center middle;
   background: $primary;
   color: white;

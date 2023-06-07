@@ -48,6 +48,13 @@ with Session(engine) as session:
         return session.scalars(select(Destination))
 
     # [X] see a list of all packages by status
+    def packages_by_status(status_id):
+        return session.scalars(
+            select(Package, Status)
+            .join(Package.status)
+            .where(Status.id == status_id)
+        )
+
     def show_all_packages_by_status():
         stmt = select(Package, Status).join(Package.status).order_by(Status.id)
         result = session.execute(stmt)

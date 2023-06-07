@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import logging
 import random
-from textual import on
+from textual import on, events
 from textual.app import App, ComposeResult, RenderResult
 from textual.color import Color
 from textual.events import Key, Event
@@ -59,6 +59,7 @@ from helpers import (
     all_customers,
     all_destinations,
     my_packages,
+    packages_by_status,
 )
 
 logging.basicConfig(
@@ -142,6 +143,18 @@ class Menu(VerticalScroll):
             classes="menu",
         )
         yield Button(
+            "In_Transit",
+            name="in_transit",
+            id="in_transit",
+            classes="menu",
+        )
+        yield Button(
+            "Lost_and_Found",
+            name="lost_and_found",
+            id="lost_and_found",
+            classes="menu",
+        )
+        yield Button(
             "Customers",
             name="all_customers",
             id="all_customers",
@@ -157,6 +170,12 @@ class Menu(VerticalScroll):
             "Add customer",
             name="add_customer",
             id="add_customer",
+            classes="menu",
+        )
+        yield Button(
+            "Add destination",
+            name="add_destination",
+            id="add_destination",
             classes="menu",
         )
 
@@ -177,14 +196,75 @@ class Home(Static):
     def compose(self) -> ComposeResult:
         driver = session.get(Driver, current_driver)
         yield Label(f"Hello, {driver.name}")
-        with VerticalScroll():
-            yield ShowDrivers()
-            yield ShowPackages()
+
         # yield ShowCustomers()
         # yield ShowDestinations()
 
 
-cursors = cycle(["column", "row", "cell"])
+class Submit(Button):
+    clicked: Reactive[RenderableType] = Reactive(False)
+
+    def on_click(self) -> None:
+        self.clicked = True
+
+
+class CustomerInfo(Widget):
+    name = reactive("name")
+    address = reactive("address")
+    coord_x = reactive("coord_x")
+    coord_y = reactive("coord_y")
+
+    def render(self) -> str:
+        return f"Customer(name={self.name},address={self.address}, address_coordinates=Point({self.coord_x}, {self.coord_y}))"
+
+
+class AddCustomer(Widget):
+    def compose(self) -> ComposeResult:
+        yield Label("Enter the new customer's information")
+
+        yield Input(
+            placeholder="Enter a customer name", id="new_customer_name"
+        )
+        yield Input(
+            placeholder="Enter a customer address", id="new_customer_address"
+        )
+        with Horizontal():
+            yield Input(
+                placeholder="Enter customer x coordinates",
+                id="new_customer_coordinates_x",
+                classes="half_screen",
+            )
+            yield Input(
+                placeholder="Enter customer y coordinates",
+                id="new_customer_coordinates_y",
+                classes="half_screen",
+            )
+
+        yield Button("Submit Customer", id="submit_customer")
+        yield CustomerInfo(id="customer_info")
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        self.query_one(CustomerInfo).name = self.query_one(
+            "#new_customer_name"
+        ).value
+        self.query_one(CustomerInfo).address = self.query_one(
+            "#new_customer_address"
+        ).value
+        self.query_one(CustomerInfo).coord_x = self.query_one(
+            "#new_customer_coordinates_x"
+        ).value
+        self.query_one(CustomerInfo).coord_y = self.query_one(
+            "#new_customer_coordinates_y"
+        ).value
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        # new_customer(name, address, address_x, address_y)
+        new_customer(
+            name=self.query_one(CustomerInfo).name,
+            address=self.query_one(CustomerInfo).address,
+            address_x=self.query_one(CustomerInfo).coord_x,
+            address_y=self.query_one(CustomerInfo).coord_y,
+        )
 
 
 class AddField(Widget):
@@ -216,23 +296,64 @@ class AddField(Widget):
         yield Button("Submit Destination", id="submit_destination")
 
 
-# class Content(Widget):
-#     def compose(self) -> ComposeResult:
-#         yield MenuButton("My Packages", goal="MyPackages.Display")
-#         yield MenuButton("2", goal="menu2")
-#         yield MenuButton("3", goal="menu3")
-#         yield MenuButton("4", goal="menu4")
-#         pass
+class DestinationInfo(Widget):
+    name = reactive("name")
+    address = reactive("address")
+    coord_x = reactive("coord_x")
+    coord_y = reactive("coord_y")
 
-#     def on_menu_button_clicked(s, message: MenuButton.Clicked) -> None:
-#         for widget in screen.query():
-#             print(widget)
+    def render(self) -> str:
+        return f"Destination(name={self.name},address={self.address}, address_coordinates=Point({self.coord_x}, {self.coord_y}))"
 
-# def on_my_packages_pressed(self,event:)
-# yield ShowDrivers()
-# yield ShowMyPackages()
-# yield ShowCustomers()
-# yield ShowDestinations()
+
+class AddDestination(Widget):
+    def compose(self) -> ComposeResult:
+        yield Label("Enter the new destination's information")
+
+        yield Input(
+            placeholder="Enter a destination name", id="new_destination_name"
+        )
+        yield Input(
+            placeholder="Enter a destination address",
+            id="new_destination_address",
+        )
+        with Horizontal():
+            yield Input(
+                placeholder="Enter destination x coordinates",
+                id="new_destination_coordinates_x",
+                classes="half_screen",
+            )
+            yield Input(
+                placeholder="Enter destination y coordinates",
+                id="new_destination_coordinates_y",
+                classes="half_screen",
+            )
+
+        yield Button("Submit destination", id="submit_destination")
+        yield DestinationInfo(id="destination_info")
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        self.query_one(DestinationInfo).name = self.query_one(
+            "#new_destination_name"
+        ).value
+        self.query_one(DestinationInfo).address = self.query_one(
+            "#new_destination_address"
+        ).value
+        self.query_one(DestinationInfo).coord_x = self.query_one(
+            "#new_destination_coordinates_x"
+        ).value
+        self.query_one(DestinationInfo).coord_y = self.query_one(
+            "#new_destination_coordinates_y"
+        ).value
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        # new_destination(name, address, address_x, address_y)
+        new_destination(
+            name=self.query_one(DestinationInfo).name,
+            address=self.query_one(DestinationInfo).address,
+            address_x=self.query_one(DestinationInfo).coord_x,
+            address_y=self.query_one(DestinationInfo).coord_y,
+        )
 
 
 cursors = cycle(["column", "row", "cell"])
@@ -281,17 +402,17 @@ class ShowMyPackages(VerticalScroll):
 class ShowPackagesNew(Widget):
     def compose(self) -> ComposeResult:
         with Horizontal(id="buttons"):
-            yield Button("All", id="filter_all_packages")
-            yield Button("In Transit", id="filter_in_transit")
-            yield Button("Waiting", id="filter_to_be_picked_up")
+            yield Button("All", id="all_packages")
+            yield Button("In Transit", id="in_transit2")
+            yield Button("Lost", id="packages_lost")
 
-        with ContentSwitcher(initial="packages"):
+        with ContentSwitcher(initial="all_packages", id="package_filter"):
             with VerticalScroll(id="all_packages"):
                 yield DataTable(id="packages")
-            with VerticalScroll(id="all_customers"):
-                yield ShowCustomers()
-            with VerticalScroll(id="all_destinations"):
-                yield ShowDestinations()
+            with VerticalScroll(id="in_transit2"):
+                yield ShowPackagesInTransit()
+            with VerticalScroll(id="packages_lost"):
+                yield ShowLostAndFound()
 
     def on_mount(self) -> None:
         packages = [package for package in all_packages()]
@@ -304,6 +425,79 @@ class ShowPackagesNew(Widget):
             table.add_row(
                 package.id, package.customer.name, package.destination.name
             )
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        print(self.screen.tree)
+        self.screen.query_one(
+            "#package_filter", ContentSwitcher
+        ).current = event.button.id
+
+    # 1	In Transit
+    # 2	Delivered
+    # 3	Waiting to be picked up
+    # 4	Lost
+
+
+class ShowLostAndFound(VerticalScroll):
+    def compose(self) -> ComposeResult:
+        yield Input(placeholder="Search...", id="search_packages")
+        yield DataTable(id="packages_lost")
+
+    def on_mount(self) -> None:
+        packages = [package for package in packages_by_status(4)]
+
+        table = self.query_one("#packages_lost", DataTable)
+        table.cursor_type = next(cursors)
+        table.zebra_stripes = True
+        table.add_columns("id", "status", "customer", "destination")
+        for package in packages:
+            table.add_row(
+                package.id,
+                package.status.name,
+                package.customer.name,
+                package.destination.name,
+            )
+
+    def sort(self, id):
+        return self
+
+    async def on_input_changed(self, message: Input.Changed) -> None:
+        pass
+
+    def key_c(self):
+        table = self.query_one("#packages_lost", DataTable)
+        table.cursor_type = next(cursors)
+
+
+class ShowPackagesInTransit(VerticalScroll):
+    def compose(self) -> ComposeResult:
+        yield Input(placeholder="Search...", id="search_packages")
+        yield DataTable(id="packages_in_transit")
+
+    def on_mount(self) -> None:
+        packages = [package for package in packages_by_status(1)]
+
+        table = self.query_one("#packages_in_transit", DataTable)
+        table.cursor_type = next(cursors)
+        table.zebra_stripes = True
+        table.add_columns("id", "status", "customer", "destination")
+        for package in packages:
+            table.add_row(
+                package.id,
+                package.status.name,
+                package.customer.name,
+                package.destination.name,
+            )
+
+    def sort(self, id):
+        return self
+
+    async def on_input_changed(self, message: Input.Changed) -> None:
+        pass
+
+    def key_c(self):
+        table = self.query_one("#packages_in_transit", DataTable)
+        table.cursor_type = next(cursors)
 
 
 class ShowPackages(VerticalScroll):
@@ -391,139 +585,147 @@ class TrackyMcPackage(App):
     def compose(self) -> ComposeResult:
         yield Header()
         yield Footer()
-        with Horizontal(id="menu"):
-            yield Menu(classes="box", id="sidebar")
-        with ContentSwitcher(
-            initial="home", id="content_switcher", classes="content"
-        ):
-            yield Home(id="home")
-            with VerticalScroll(id="my_packages"):
-                yield ShowMyPackages()
-            with VerticalScroll(id="all_packages"):
-                yield ShowPackages()
-            with VerticalScroll(id="all_customers"):
-                yield ShowCustomers()
-            with VerticalScroll(id="all_destinations"):
-                yield ShowDestinations()
-            with VerticalScroll(id="add_customer"):
-                yield AddField()
+        with Horizontal():
+            with Vertical(id="menu"):
+                yield Menu(classes="box", id="sidebar")
+            with ContentSwitcher(
+                initial="home", id="content_switcher", classes="content"
+            ):
+                yield Home(id="home")
+                with VerticalScroll(id="my_packages"):
+                    yield ShowMyPackages()
+                with VerticalScroll(id="all_packages"):
+                    yield ShowPackagesNew()
+                with VerticalScroll(id="in_transit"):
+                    yield ShowPackagesInTransit()
+                with VerticalScroll(id="lost_and_found"):
+                    yield ShowLostAndFound()
+                with VerticalScroll(id="all_customers"):
+                    yield ShowCustomers()
+                with VerticalScroll(id="all_destinations"):
+                    yield ShowDestinations()
+                with VerticalScroll(id="add_customer"):
+                    # yield AddField()
+                    yield AddCustomer()
+                with VerticalScroll(id="add_destination"):
+                    yield AddDestination()
             # yield Content(classes="box", id="content")
 
-    def remove_content(self) -> None:
-        packages = self.query("ShowPackages")
-        if packages:
-            packages.remove()
-        drivers = self.query("ShowDrivers")
-        if drivers:
-            drivers.remove()
+    # def remove_content(self) -> None:
+    #     packages = self.query("ShowPackages")
+    #     if packages:
+    #         packages.remove()
+    #     drivers = self.query("ShowDrivers")
+    #     if drivers:
+    #         drivers.remove()
 
-    def add_packages(self) -> None:
-        packages = ShowPackages()
-        # alternatives = self.query("#drivers")
-        # if alternatives:
-        #     alternatives.last().remove()
-        # self.query_one("#content").mount(packages)
-        customers = self.query("ShowCustomers")
-        if customers:
-            customers.last().remove()
-            drivers = self.display.query("ShowDrivers")
-        if drivers:
-            drivers.last().remove()
-        self.query_one("#content_switcher").mount(packages)
-        self.display.scroll_visible()
+    # def add_packages(self) -> None:
+    #     packages = ShowPackages()
+    #     # alternatives = self.query("#drivers")
+    #     # if alternatives:
+    #     #     alternatives.last().remove()
+    #     # self.query_one("#content").mount(packages)
+    #     customers = self.query("ShowCustomers")
+    #     if customers:
+    #         customers.last().remove()
+    #         drivers = self.display.query("ShowDrivers")
+    #     if drivers:
+    #         drivers.last().remove()
+    #     self.query_one("#content_switcher").mount(packages)
+    #     self.display.scroll_visible()
 
-    def add_drivers(self) -> None:
-        drivers = ShowDrivers()
-        # alternatives = self.query("#packages")
-        # if alternatives:
-        #     alternatives.last().remove()
-        # self.query_one("#content").mount(drivers)
-        packages = self.query("ShowPackages")
-        if packages:
-            packages.last().remove()
-        customers = self.query("ShowCustomers")
-        if customers:
-            customers.last().remove()
-        self.query_one("#content_switcher").mount(drivers)
+    # def add_drivers(self) -> None:
+    #     drivers = ShowDrivers()
+    #     # alternatives = self.query("#packages")
+    #     # if alternatives:
+    #     #     alternatives.last().remove()
+    #     # self.query_one("#content").mount(drivers)
+    #     packages = self.query("ShowPackages")
+    #     if packages:
+    #         packages.last().remove()
+    #     customers = self.query("ShowCustomers")
+    #     if customers:
+    #         customers.last().remove()
+    #     self.query_one("#content_switcher").mount(drivers)
 
-    def add_customers(self) -> None:
-        customers = ShowCustomers()
-        packages = self.query("ShowPackages")
-        if packages:
-            packages.last().remove()
-        drivers = self.display.query("ShowDrivers")
-        if drivers:
-            drivers.last().remove()
-        self.query_one("#content_switcher").mount(customers)
+    # def add_customers(self) -> None:
+    #     customers = ShowCustomers()
+    #     packages = self.query("ShowPackages")
+    #     if packages:
+    #         packages.last().remove()
+    #     drivers = self.display.query("ShowDrivers")
+    #     if drivers:
+    #         drivers.last().remove()
+    #     self.query_one("#content_switcher").mount(customers)
 
-    def add(self):
-        packages = self.query("ShowPackages")
-        if packages:
-            packages.last().remove()
-        drivers = self.display.query("ShowDrivers")
-        if drivers:
-            drivers.last().remove()
-        customers = self.query("ShowCustomers")
-        if customers:
-            customers.last().remove()
-        self.query_one("#content_switcher").mount(AddField())
+    # def add(self):
+    #     packages = self.query("ShowPackages")
+    #     if packages:
+    #         packages.last().remove()
+    #     drivers = self.display.query("ShowDrivers")
+    #     if drivers:
+    #         drivers.last().remove()
+    #     customers = self.query("ShowCustomers")
+    #     if customers:
+    #         customers.last().remove()
+    #     self.query_one("#content_switcher").mount(AddField())
 
-    @on(Button.Pressed)
-    def handle_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "packages_button":
-            self.add_packages()
-        if event.button.id == "clear_button":
-            self.remove_content()
-        if event.button.id == "drivers_button":
-            self.add_drivers()
-        if event.button.id == "customers_button":
-            self.add_customers()
-        if event.button.id == "add_button":
-            self.add()
-        if event.button.id == "exit_button":
-            self.exit()
-        if event.button.id == "submit_customer":
-            customer = Customer(
-                name=self.query_one("#new_customer_name").value,
-                address=self.query_one("#new_customer_address").value,
-                address_coordinates=Point(
-                    random.randint(1, 50), random.randint(1, 50)
-                ),
-            )
-            # session.add(customer)
-            # session.commit()
-            self.query_one("#new_customer_name").value = ""
-            self.query_one("#new_customer_address").value = ""
-            self.query_one("#new_customer_coords").value = ""
-            self.query_one("AddField").mount(
-                Label(
-                    f"{customer.name}, {customer.address}, {customer.address_coordinates}"
-                )
-            )
+    # @on(Button.Pressed)
+    # def handle_button_pressed(self, event: Button.Pressed) -> None:
+    #     if event.button.id == "packages_button":
+    #         self.add_packages()
+    #     if event.button.id == "clear_button":
+    #         self.remove_content()
+    #     if event.button.id == "drivers_button":
+    #         self.add_drivers()
+    #     if event.button.id == "customers_button":
+    #         self.add_customers()
+    #     if event.button.id == "add_button":
+    #         self.add()
+    #     if event.button.id == "exit_button":
+    #         self.exit()
+    #     if event.button.id == "submit_customer":
+    #         customer = Customer(
+    #             name=self.query_one("#new_customer_name").value,
+    #             address=self.query_one("#new_customer_address").value,
+    #             address_coordinates=Point(
+    #                 random.randint(1, 50), random.randint(1, 50)
+    #             ),
+    #         )
+    #         # session.add(customer)
+    #         # session.commit()
+    #         self.query_one("#new_customer_name").value = ""
+    #         self.query_one("#new_customer_address").value = ""
+    #         self.query_one("#new_customer_coords").value = ""
+    #         self.query_one("AddField").mount(
+    #             Label(
+    #                 f"{customer.name}, {customer.address}, {customer.address_coordinates}"
+    #             )
+    #         )
 
-        if event.button.id == "submit_destination":
-            destination = Destination(
-                name=self.query_one("#new_destination_name").value,
-                address=self.query_one("#new_destination_address").value,
-                address_coordinates=Point(
-                    random.randint(1, 50), random.randint(1, 50)
-                ),
-            )
-            self.query_one("#new_destination_name").value = ""
-            self.query_one("#new_destination_address").value = ""
-            self.query_one("#new_destination_coords").value = ""
-            self.query_one("AddField").mount(
-                Label(
-                    f"{destination.name}, {destination.address}, {destination.address_coordinates}"
-                )
-            )
+    #     if event.button.id == "submit_destination":
+    #         destination = Destination(
+    #             name=self.query_one("#new_destination_name").value,
+    #             address=self.query_one("#new_destination_address").value,
+    #             address_coordinates=Point(
+    #                 random.randint(1, 50), random.randint(1, 50)
+    #             ),
+    #         )
+    #         self.query_one("#new_destination_name").value = ""
+    #         self.query_one("#new_destination_address").value = ""
+    #         self.query_one("#new_destination_coords").value = ""
+    #         self.query_one("AddField").mount(
+    #             Label(
+    #                 f"{destination.name}, {destination.address}, {destination.address_coordinates}"
+    #             )
+    #         )
 
-        # @on(Input.Submitted)
-        # def customer_name_submitted(self, event: Input.Submitted) -> None:
-        #     if event.input.id == "new_customer_name":
-        #         new_customer_name = event.value
-        #         event.input.value = ""
-        #         print(f"{new_customer_name}")
+    # @on(Input.Submitted)
+    # def customer_name_submitted(self, event: Input.Submitted) -> None:
+    #     if event.input.id == "new_customer_name":
+    #         new_customer_name = event.value
+    #         event.input.value = ""
+    #         print(f"{new_customer_name}")
 
     def on_load(self):
         self.log("In the log handler", pi=3.141529)
