@@ -5,10 +5,14 @@ Screen {
 #sidebar {
   tint: gray 20%;
 }
-
-#content {
+.content {
   column-span: 3;
   tint: green 50%;
+}
+
+Home {
+  align: center middle;
+  margin: 2 0;
 }
 .box {
   height: 100%;
@@ -19,9 +23,13 @@ ListView {
   height: auto;
   margin: 0 2;
 }
-
+.menu {
+  padding: 0 0;
+  margin: 0 0;
+}
 Label {
-  padding: 1 2;
+  
+  padding: 1 1;
 }
 Header {
   dock: top;
