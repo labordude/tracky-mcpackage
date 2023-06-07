@@ -27,6 +27,8 @@ from textual.widgets import (
     DataTable,
     ContentSwitcher,
     Markdown,
+    TabbedContent,
+    TabPane,
 )
 from itertools import cycle
 from textual.reactive import reactive, Reactive
@@ -402,7 +404,79 @@ class ShowMyPackages(VerticalScroll):
         table.cursor_type = next(cursors)
 
 
+class UpdatePackage(ModalScreen):
+    """update a package from this screen"""
+
+    def __init__(self):
+        # self.package_id = package_id
+        # self.customer = package_customer
+        # self.destination = package_dest
+        # self.status = package_status
+        pass
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Label("Hello!"),
+            # Label(str(self.package_id), id="question"),
+            # Label(str(self.customer)),
+            # Label(str(self.destination)),
+            # Label(str(self.status)),
+            Button("Quit", variant="error", id="quit"),
+            Button("Cancel", variant="primary", id="cancel"),
+            id="dialog",
+        )
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        self.app.pop_screen()
+
+
+class ShowPackagesNew2(Widget):
+    def compose(self) -> ComposeResult:
+        with TabbedContent("All", "In Transit", "Lost", id="package_filter"):
+            yield DataTable(id="packages")
+            yield ShowPackagesInTransit()
+            yield ShowLostAndFound()
+
+    def on_mount(self) -> None:
+        packages = [package for package in all_packages()]
+
+        table = self.query_one("#packages", DataTable)
+        table.cursor_type = next(cursors)
+        table.zebra_stripes = True
+        table.add_columns("id", "status", "customer", "destination")
+        for package in packages:
+            table.add_row(
+                package.id,
+                package.status.name,
+                package.customer.name,
+                package.destination.name,
+            )
+
+    def action_show_tab(self, tab: str) -> None:
+        """Switch to a new tab."""
+        self.get_child_by_type("#package_filter", TabbedContent).active = tab
+
+    # def on_tabs_tab_activated(self, event: Tabs.Clicked):
+    #     pass
+
+    # def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+    #     self.app.push_screen("UpdatePackage")
+
+    # def on_button_pressed(self, event: Button.Pressed) -> None:
+    #     print(self.screen.tree)
+    #     self.screen.query_one(
+    #         "#package_filter", ContentSwitcher
+    #     ).current = event.button.id
+
+    # 1	In Transit
+    # 2	Delivered
+    # 3	Waiting to be picked up
+    # 4	Lost
+
+
 class ShowPackagesNew(Widget):
+    SCREENS = {"UpdatePackage": UpdatePackage()}
+
     def compose(self) -> ComposeResult:
         with Horizontal(id="buttons"):
             yield Button("All", id="all_packages")
@@ -433,12 +507,7 @@ class ShowPackagesNew(Widget):
             )
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
-        UpdatePackage(
-            package_id=1,
-            package_customer=2,
-            package_dest=3,
-            package_status="Lost",
-        )
+        self.app.push_screen("UpdatePackage")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         print(self.screen.tree)
@@ -450,33 +519,6 @@ class ShowPackagesNew(Widget):
     # 2	Delivered
     # 3	Waiting to be picked up
     # 4	Lost
-
-
-class UpdatePackage(ModalScreen):
-    """update a package from this screen"""
-
-    def __init__(
-        self, package_id, package_customer, package_dest, package_status
-    ):
-        self.package_id = package_id
-        self.customer = package_customer
-        self.destination = package_dest
-        self.status = package_status
-        pass
-
-    def compose(self) -> ComposeResult:
-        yield Grid(
-            Label(str(self.package_id), id="question"),
-            Label(str(self.customer)),
-            Label(str(self.destination)),
-            Label(str(self.status)),
-            Button("Quit", variant="error", id="quit"),
-            Button("Cancel", variant="primary", id="cancel"),
-            id="dialog",
-        )
-
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        self.app.pop_screen()
 
 
 class BSOD(Screen):
@@ -711,7 +753,7 @@ class TrackyMcPackage(App):
     TITLE = "Tracky McPackage"
     SUB_TITLE = "We'll get it there...eventually"
     current_driver = 4
-    SCREENS = {"bsod": BSOD()}
+    SCREENS = {"bsod": BSOD(), "UpdatePackage": UpdatePackage()}
     BINDINGS = [("b", "push_screen('bsod')", "BSOD")]
     # display = reactive(Content(classes="box", id="content"))
 
@@ -728,7 +770,7 @@ class TrackyMcPackage(App):
                 with VerticalScroll(id="my_packages"):
                     yield ShowMyPackages()
                 with VerticalScroll(id="all_packages"):
-                    yield ShowPackagesNew()
+                    yield ShowPackagesNew2()
                 with VerticalScroll(id="in_transit"):
                     yield ShowPackagesInTransit()
                 with VerticalScroll(id="lost_and_found"):
