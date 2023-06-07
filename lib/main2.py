@@ -27,18 +27,11 @@ from textual.widgets import (
     ContentSwitcher,
     Markdown,
 )
-from itertools import cycle
-from textual.reactive import reactive, Reactive
+from textual.reactive import reactive
 from textual.strip import Strip
 from textual.screen import Screen
-from rich.align import Align
-from rich.box import DOUBLE
 from rich.segment import Segment
-from rich.panel import Panel
-from rich.console import RenderableType, group
 from rich.style import Style
-from rich.table import Table
-from rich.text import Text
 from textual.widget import Widget
 from models import Driver, Destination, Customer, Package, Status
 from sqlalchemy import create_engine, select, update
