@@ -27,18 +27,11 @@ from textual.widgets import (
     ContentSwitcher,
     Markdown,
 )
-from itertools import cycle
-from textual.reactive import reactive, Reactive
+from textual.reactive import reactive
 from textual.strip import Strip
 from textual.screen import Screen
-from rich.align import Align
-from rich.box import DOUBLE
 from rich.segment import Segment
-from rich.panel import Panel
-from rich.console import RenderableType, group
 from rich.style import Style
-from rich.table import Table
-from rich.text import Text
 from textual.widget import Widget
 from models import Driver, Destination, Customer, Package, Status
 from sqlalchemy import create_engine, select, update
@@ -177,94 +170,8 @@ class Home(Static):
     def compose(self) -> ComposeResult:
         driver = session.get(Driver, current_driver)
         yield Label(f"Hello, {driver.name}")
-        with VerticalScroll():
-            yield ShowDrivers()
-            yield ShowPackages()
-        # yield ShowCustomers()
-        # yield ShowDestinations()
 
-
-cursors = cycle(["column", "row", "cell"])
-
-
-class ShowDrivers(Widget):
-    def compose(self) -> ComposeResult:
-        yield DataTable(id="drivers")
-
-    def on_mount(self) -> None:
-        drivers = [driver for driver in all_drivers()]
-
-        table = self.query_one("#drivers", DataTable)
-        table.cursor_type = next(cursors)
-        table.zebra_stripes = True
-        table.add_columns("id", "name")
-        for driver in drivers:
-            table.add_row(driver.id, driver.name)
-
-    def key_c(self):
-        table = self.query_one("#drivers", DataTable)
-        table.cursor_type = next(cursors)
-
-
-class ShowPackages(Widget):
-    def compose(self) -> ComposeResult:
-        yield DataTable(id="packages")
-
-    def on_mount(self) -> None:
-        packages = [package for package in all_packages()]
-
-        table = self.query_one("#packages", DataTable)
-        table.cursor_type = next(cursors)
-        table.zebra_stripes = True
-        table.add_columns("id", "customer", "destination")
-        for package in packages:
-            table.add_row(
-                package.id, package.customer.name, package.destination.name
-            )
-
-    def key_c(self):
-        table = self.query_one("#packages", DataTable)
-        table.cursor_type = next(cursors)
-
-
-class ShowCustomers(Widget):
-    def compose(self) -> ComposeResult:
-        yield DataTable(id="customers")
-
-    def on_mount(self) -> None:
-        customers = [customer for customer in all_customers()]
-
-        table = self.query_one("#customers", DataTable)
-        table.cursor_type = next(cursors)
-        table.zebra_stripes = True
-        table.add_columns("id", "name", "address")
-        for customer in customers:
-            table.add_row(customer.id, customer.name, customer.address)
-
-    def key_c(self):
-        table = self.query_one("#customers", DataTable)
-        table.cursor_type = next(cursors)
-
-
-class ShowDestinations(Widget):
-    def compose(self) -> ComposeResult:
-        yield DataTable(id="destinations")
-
-    def on_mount(self) -> None:
-        destinations = [destination for destination in all_destinations()]
-
-        table = self.query_one("#destinations", DataTable)
-        table.cursor_type = next(cursors)
-        table.zebra_stripes = True
-        table.add_columns("id", "name", "address")
-        for destination in destinations:
-            table.add_row(
-                destination.id, destination.name, destination.address
-            )
-
-    def key_c(self):
-        table = self.query_one("#destinations", DataTable)
-        table.cursor_type = next(cursors)
+        pass
 
 
 class AddField(Widget):
@@ -617,7 +524,8 @@ class TrackyMcPackage(App):
 
 
 if __name__ == "__main__":
-    engine = create_engine("sqlite:///fpds.db")
-    with Session(engine) as session:
-        app = TrackyMcPackage()
-        app.run()
+    app = TrackyMcPackage()
+    app.run()
+    # drivers = all_drivers()
+    # for driver in drivers:
+    #     print(driver.name)

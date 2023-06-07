@@ -64,6 +64,10 @@ with Session(engine) as session:
         #     print(f"{row.Status.name} {row.Package.id}")
 
     # [X] see a list of all packages assigned to them for delivery
+    def my_packages(driver_id):
+        driver = session.get(Driver, driver_id)
+        return driver.driver_packages
+
     def packages_by_driver(driver_id):
         driver = session.get(Driver, driver_id)
         for package in driver.driver_packages:
