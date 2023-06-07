@@ -7,7 +7,6 @@ Screen {
   tint: gray 20%;
 }
 .content {
-#content {
   column-span: 3;
   tint: green 50%;
 }
@@ -31,7 +30,7 @@ ListView {
 }
 Label {
   padding: 1 1;
-  
+
   padding: 1 1;
 }
 Header {
