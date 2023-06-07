@@ -2,7 +2,38 @@ Screen {
   padding: 0;
   margin: 0;
 }
+.search {
+  height: 2;
+  padding: 0 0 0 0;
+  margin: 0 0 0 0;
+  border: none;
+}
+.search > Input {
+  width: 3fr;
+}
 
+BSOD {
+  align: center middle;
+  background: blue;
+  color: white;
+}
+
+BSOD > Static {
+  width: 70;
+}
+
+#title {
+  content-align-horizontal: center;
+  text-style: reverse;
+}
+
+#any-key {
+  content-align-horizontal: center;
+}
+
+.search > Button {
+  width: 1fr;
+}
 #sidebar {
   width: 1fr;
   color: white;
@@ -26,9 +57,10 @@ ContentSwitcher {
 }
 DataTable {
   background: $panel;
+  height: 100%;
 }
 Input {
-  margin: 1 0 0 0;
+  margin: 0 0 0 0;
 }
 Input.half_screen {
   width: 1fr;
@@ -55,7 +87,7 @@ Label {
 }
 Header {
   dock: top;
-  height: 3;
+  height: 2;
   padding-top: 0;
   content-align: center middle;
   background: $primary;
@@ -64,7 +96,7 @@ Header {
 
 Footer {
   dock: bottom;
-  height: 2;
+  height: 0;
   content-align: center middle;
   background: blue;
   color: white;

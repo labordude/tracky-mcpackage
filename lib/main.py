@@ -9,6 +9,7 @@ from textual.logging import TextualHandler
 from textual.message import Message
 from textual.containers import (
     Container,
+    Grid,
     Vertical,
     Horizontal,
     ScrollableContainer,
@@ -30,7 +31,7 @@ from textual.widgets import (
 from itertools import cycle
 from textual.reactive import reactive, Reactive
 from textual.strip import Strip
-from textual.screen import Screen
+from textual.screen import Screen, ModalScreen
 from rich.align import Align
 from rich.box import DOUBLE
 from rich.segment import Segment
@@ -61,6 +62,7 @@ from helpers import (
     my_packages,
     packages_by_status,
     search_by_customer,
+    search_by_destination,
 )
 
 logging.basicConfig(
@@ -421,11 +423,22 @@ class ShowPackagesNew(Widget):
         table = self.query_one("#packages", DataTable)
         table.cursor_type = next(cursors)
         table.zebra_stripes = True
-        table.add_columns("id", "customer", "destination")
+        table.add_columns("id", "status", "customer", "destination")
         for package in packages:
             table.add_row(
-                package.id, package.customer.name, package.destination.name
+                package.id,
+                package.status.name,
+                package.customer.name,
+                package.destination.name,
             )
+
+    def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        UpdatePackage(
+            package_id=1,
+            package_customer=2,
+            package_dest=3,
+            package_status="Lost",
+        )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         print(self.screen.tree)
@@ -437,6 +450,52 @@ class ShowPackagesNew(Widget):
     # 2	Delivered
     # 3	Waiting to be picked up
     # 4	Lost
+
+
+class UpdatePackage(ModalScreen):
+    """update a package from this screen"""
+
+    def __init__(
+        self, package_id, package_customer, package_dest, package_status
+    ):
+        self.package_id = package_id
+        self.customer = package_customer
+        self.destination = package_dest
+        self.status = package_status
+        pass
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Label(str(self.package_id), id="question"),
+            Label(str(self.customer)),
+            Label(str(self.destination)),
+            Label(str(self.status)),
+            Button("Quit", variant="error", id="quit"),
+            Button("Cancel", variant="primary", id="cancel"),
+            id="dialog",
+        )
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        self.app.pop_screen()
+
+
+class BSOD(Screen):
+    ERROR_TEXT = """
+An error has occurred. To continue:
+
+Press Enter to return to Windows, or
+
+Press CTRL+ALT+DEL to restart your computer. If you do this,
+you will lose any unsaved information in all open applications.
+
+Error: 0E : 016F : BFF9B3D4
+"""
+    BINDINGS = [("escape", "app.pop_screen", "Pop screen")]
+
+    def compose(self) -> ComposeResult:
+        yield Static(" Windows ", id="title")
+        yield Static(self.ERROR_TEXT)
+        yield Static("Press any key to continue [blink]_[/]", id="any-key")
 
 
 class ShowLostAndFound(VerticalScroll):
@@ -530,25 +589,50 @@ class ShowPackages(VerticalScroll):
 
 
 class ShowCustomers(VerticalScroll):
-    search = reactive("")
-    customers = [customer for customer in search_by_customer(search)]
+    search = ""
 
     def compose(self) -> ComposeResult:
-        yield Input(placeholder="Search for a customer", id="search_customer")
-        yield DataTable(id="customers")
+        with VerticalScroll():
+            with Horizontal(classes="search"):
+                yield Input(
+                    placeholder="Search for a customer", id="search_customer"
+                )
+                yield Button("Search", id="submit_search_customer")
+            yield DataTable(id="customers")
 
     def on_mount(self) -> None:
-        # customers = [customer for customer in all_customers()]
+        customers = [customer for customer in all_customers()]
 
         table = self.query_one("#customers", DataTable)
         table.cursor_type = next(cursors)
         table.zebra_stripes = True
         table.add_columns("id", "name", "address")
-        for customer in self.customers:
+        for customer in customers:
             table.add_row(customer.id, customer.name, customer.address)
 
     def on_input_changed(self, event: Input.Changed) -> None:
         self.search = event.value
+        self.update_filter()
+
+    def update_filter(self) -> None:
+        customers = [customer for customer in search_by_customer(self.search)]
+        table = self.query_one("#customers", DataTable)
+        table.clear()
+        table.cursor_type = next(cursors)
+        table.zebra_stripes = True
+        table.add_columns("id", "name", "address")
+        for customer in customers:
+            table.add_row(customer.id, customer.name, customer.address)
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        customers = [customer for customer in search_by_customer(self.search)]
+        table = self.query_one("#customers", DataTable)
+        table.clear()
+        table.cursor_type = next(cursors)
+        table.zebra_stripes = True
+        table.add_columns("id", "name", "address")
+        for customer in customers:
+            table.add_row(customer.id, customer.name, customer.address)
 
     def key_c(self):
         table = self.query_one("#customers", DataTable)
@@ -556,14 +640,54 @@ class ShowCustomers(VerticalScroll):
 
 
 class ShowDestinations(VerticalScroll):
+    search = ""
+
     def compose(self) -> ComposeResult:
-        yield Input(placeholder="Search...", id="search_destination")
-        yield DataTable(id="destinations")
+        with Vertical():
+            with Horizontal(classes="search"):
+                yield Input(
+                    placeholder="Search for a destination",
+                    id="search_destination",
+                )
+                yield Button("Search", id="submit_search_destination")
+            yield DataTable(id="destinations")
 
     def on_mount(self) -> None:
         destinations = [destination for destination in all_destinations()]
 
         table = self.query_one("#destinations", DataTable)
+        table.cursor_type = next(cursors)
+        table.zebra_stripes = True
+        table.add_columns("id", "name", "address")
+        for destination in destinations:
+            table.add_row(
+                destination.id, destination.name, destination.address
+            )
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        self.search = event.value
+        self.update_filter()
+
+    def update_filter(self) -> None:
+        destinations = [
+            destination for destination in search_by_destination(self.search)
+        ]
+        table = self.query_one("#destinations", DataTable)
+        table.clear()
+        table.cursor_type = next(cursors)
+        table.zebra_stripes = True
+        table.add_columns("id", "name", "address")
+        for destination in destinations:
+            table.add_row(
+                destination.id, destination.name, destination.address
+            )
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        destinations = [
+            destination for destination in search_by_destination(self.search)
+        ]
+        table = self.query_one("#destinations", DataTable)
+        table.clear()
         table.cursor_type = next(cursors)
         table.zebra_stripes = True
         table.add_columns("id", "name", "address")
@@ -587,6 +711,8 @@ class TrackyMcPackage(App):
     TITLE = "Tracky McPackage"
     SUB_TITLE = "We'll get it there...eventually"
     current_driver = 4
+    SCREENS = {"bsod": BSOD()}
+    BINDINGS = [("b", "push_screen('bsod')", "BSOD")]
     # display = reactive(Content(classes="box", id="content"))
 
     def compose(self) -> ComposeResult:

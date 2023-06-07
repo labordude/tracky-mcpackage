@@ -49,7 +49,22 @@ with Session(engine) as session:
 
     def search_by_customer(search):
         return session.scalars(
-            select(Customer).where(Customer.name.like(search))
+            select(Customer).where(
+                or_(
+                    Customer.name.contains(search),
+                    Customer.address.contains(search),
+                )
+            )
+        )
+
+    def search_by_destination(search):
+        return session.scalars(
+            select(Destination).where(
+                or_(
+                    Destination.name.contains(search),
+                    Destination.address.contains(search),
+                )
+            )
         )
 
     # [X] see a list of all packages by status
