@@ -27,6 +27,7 @@ from textual.widgets import (
     DataTable,
     ContentSwitcher,
     Markdown,
+    Select
 )
 from itertools import cycle
 from textual.reactive import reactive, Reactive
@@ -181,6 +182,19 @@ class Menu(VerticalScroll):
             id="add_destination",
             classes="menu",
         )
+        yield Button(
+            "Add package",
+            name="add_package",
+            id="add_package",
+            classes="menu",
+        )
+        yield Button(
+            "Exit",
+            name="exit_button",
+            id="exit_button",
+            classes="menu",
+        )
+        
 
     # def on_list_item_clicked(self, event: ListView.Selected) -> None:
     #     print(self.item.id)
@@ -189,6 +203,8 @@ class Menu(VerticalScroll):
     #     ).current = event.item.id
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "exit_button":
+            self.exit()
         print(self.screen.tree)
         self.screen.query_one(
             "#content_switcher", ContentSwitcher
@@ -331,7 +347,6 @@ class AddDestination(Widget):
                 id="new_destination_coordinates_y",
                 classes="half_screen",
             )
-
         yield Button("Submit destination", id="submit_destination")
         yield DestinationInfo(id="destination_info")
 
@@ -357,7 +372,62 @@ class AddDestination(Widget):
             address_x=self.query_one(DestinationInfo).coord_x,
             address_y=self.query_one(DestinationInfo).coord_y,
         )
+class PackageInfo(Widget):
+    customer = reactive("Customer")
+    destination = reactive("Destination")
+    driver = reactive("Driver")
 
+    def render(self) -> str:
+        return f"{self.customer}\n{self.destination}\n{self.driver}"
+        
+        # return f"""From(Customer={self.customer_name},address={self.customer_a.ddress}, customer_address_coordinates=Point({self.customer_coord_x},
+        #             {self.customer_coord_y})To: {self.destination_name}, address={self.destination_address}, ({self.destination_coord_x},
+        #             {self.destination_coord_y}) by Driver: {self.driver_name})"""
+
+class AddPackage(Widget):
+    def compose(self) -> ComposeResult:
+        yield Label("Select the customer, destination, and driver of the new package")
+        # with Horizontal():
+        yield Select(
+                options=((customer.name, customer) for customer in all_customers()), 
+                id = "select_customer",
+                prompt = "Select a customer",
+                classes="half_screen"
+            )
+        yield Select(
+                options=((destination.address, destination) for destination in all_destinations()),
+                id = "select_destination",
+                prompt = "Select a destination",
+                classes="half_screen"
+            )
+        yield Select(
+                options=((driver.name, driver) for driver in all_drivers()),
+                id = "select_driver",
+                prompt = "Select a driver",
+                classes= "half_screen"
+            )
+        yield Button("Submit Package", id = "submit_package")
+        yield PackageInfo(id = "package_info")
+    
+    def on_select_changed(self, event: Select.Changed) -> None:
+        self.query_one(PackageInfo).customer = self.query_one(
+            "#select_customer"
+        ).value
+        self.query_one(PackageInfo).destination = self.query_one(
+            "#select_destination"
+        ).value
+        self.query_one(PackageInfo).driver = self.query_one(
+            "#select_driver"
+        ).value
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        # new_destination(name, address, address_x, address_y)
+        new_package(
+            status_id=1,
+            customer_id=self.query_one(PackageInfo).customer.id,
+            destination_id=self.query_one(PackageInfo).destination.id,
+            driver_id=self.query_one(PackageInfo).driver.id
+        )
 
 cursors = cycle(["column", "row", "cell"])
 
@@ -742,6 +812,9 @@ class TrackyMcPackage(App):
                     yield AddCustomer()
                 with VerticalScroll(id="add_destination"):
                     yield AddDestination()
+                with VerticalScroll(id="add_package"):
+                    yield AddPackage()
+                yield Button("Exit", id = "exit_button")
             # yield Content(classes="box", id="content")
 
     # def remove_content(self) -> None:
