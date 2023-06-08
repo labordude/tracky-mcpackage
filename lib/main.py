@@ -29,6 +29,7 @@ from textual.widgets import (
     Markdown,
     TabbedContent,
     TabPane,
+    Select,
 )
 from itertools import cycle
 from textual.reactive import reactive, Reactive
@@ -52,7 +53,6 @@ from helpers import (
     all_packages,
     show_all_packages_by_status,
     packages_by_driver,
-    update_package_status,
     new_customer,
     new_destination,
     new_package,
@@ -66,6 +66,9 @@ from helpers import (
     search_by_customer,
     search_by_destination,
     search_packages,
+    single_package,
+    all_statuses,
+    update_package,
 )
 
 logging.basicConfig(
@@ -80,64 +83,11 @@ class Point:
     y: int
 
 
-current_driver = 4
-
-
-class MenuButton(Button):
-    """A color button."""
-
-    class Clicked(Message):
-        """Color selected message."""
-
-        def __init__(self, goal: str) -> None:
-            self.goal = goal
-            super().__init__()
-
-    def __init__(self, goal: str) -> None:
-        self.goal = goal
-        super().__init__()
-
-    def on_mount(self) -> None:
-        self.styles.margin = (1, 2)
-        self.styles.content_align = ("center", "middle")
-        self.styles.background = Color.parse("#ffffff33")
-
-    def on_click(self) -> None:
-        # The post_message method sends an event to be handled in the DOM
-        self.post_message(self.Clicked(self.text))
-
-    def render(self) -> str:
-        return str(self.text)
+current_driver = random.randint(1, 8)
 
 
 class Menu(VerticalScroll):
     def compose(self) -> ComposeResult:
-        # yield ListView(
-        #     ListItem(
-        #         Label("My Packages"), classes="menu_item", id="my_packages"
-        #     ),
-        #     ListItem(
-        #         Label("Packages"),
-        #         classes="menu_item",
-        #         name="all_packages",
-        #         id="all_packages",
-        #     ),
-        #     ListItem(
-        #         Label("Customers"),
-        #         classes="menu_item",
-        #         name="all_customers",
-        #         id="all_customers",
-        #     ),
-        #     ListItem(Label("Destinations", classes="menu_item")),
-        #     ListItem(
-        #         Label(
-        #             "Search",
-        #             classes="menu_item",
-        #             name="all_destinations",
-        #             id="all_destinations",
-        #         )
-        #     ),
-        # )
         yield Button("Home", name="home", id="home", classes="menu")
         yield Button(
             "My Packages", name="my_packages", id="my_packages", classes="menu"
@@ -148,18 +98,6 @@ class Menu(VerticalScroll):
             id="all_packages",
             classes="menu",
         )
-        # yield Button(
-        #     "In_Transit",
-        #     name="in_transit",
-        #     id="in_transit",
-        #     classes="menu",
-        # )
-        # yield Button(
-        #     "Lost_and_Found",
-        #     name="lost_and_found",
-        #     id="lost_and_found",
-        #     classes="menu",
-        # )
         yield Button(
             "Customers",
             name="all_customers",
@@ -185,37 +123,55 @@ class Menu(VerticalScroll):
             classes="menu",
         )
         yield Button(
-            "Show Modal",
-            name="show_modal",
-            id="show_modal",
+            "Add package",
+            name="add_package",
+            id="add_package",
+            classes="menu",
+        )
+        yield Button(
+            "Exit",
+            name="exit_button",
+            id="exit_button",
             classes="menu",
         )
 
-    # def on_list_item_clicked(self, event: ListView.Selected) -> None:
-    #     print(self.item.id)
-    #     self.screen.query_one(
-    #         "#content_switcher", ContentSwitcher
-    #     ).current = event.item.id
-
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "exit_button":
+            app.exit()
+        print(self.screen.tree)
         print(self.screen.tree)
         self.screen.query_one(
             "#content_switcher", ContentSwitcher
         ).current = event.button.id
 
 
-class ShowModal(Widget):
-    def compose(self) -> ComposeResult:
-        yield Button("Show Something")
+class CurrentDriver(Widget):
+    driver = reactive("")
+    name = reactive("No one logged in")
+    driver_id = reactive(int(current_driver))
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        self.app.push_screen(UpdatePackage())
+    def render(self) -> str:
+        return f"Currently logged on: {self.name}"
 
 
-class Home(Static):
+class Home(VerticalScroll):
     def compose(self) -> ComposeResult:
         driver = session.get(Driver, current_driver)
-        yield Label(f"Hello, {driver.name}")
+
+        yield CurrentDriver()
+        yield Label("Choose your login:")
+        yield Select(
+            options=((driver.name, driver.id) for driver in all_drivers()),
+            id="driver_login",
+            prompt=driver.name,
+            value=driver.id,
+        )
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        current_driver = session.get(
+            Driver, self.query_one("#driver_login").value
+        )
+        self.query_one(CurrentDriver).name = current_driver.name
 
 
 class CustomerInfo(Widget):
@@ -380,9 +336,66 @@ class ShowDrivers(VerticalScroll):
         for driver in drivers:
             table.add_row(driver.id, driver.name)
 
-    # def key_c(self):
-    #     table = self.query_one("#drivers", DataTable)
-    #     table.cursor_type = "row"
+
+class PackageInfo(Widget):
+    customer = reactive("Customer")
+    destination = reactive("Destination")
+    driver = reactive("Driver")
+
+    def render(self) -> str:
+        return f"{self.customer}\n{self.destination}\n{self.driver}"
+
+
+class AddPackage(Widget):
+    def compose(self) -> ComposeResult:
+        yield Label(
+            "Select the customer, destination, and driver of the new package"
+        )
+        # with Horizontal():
+        yield Select(
+            options=(
+                (customer.name, customer) for customer in all_customers()
+            ),
+            id="select_customer",
+            prompt="Select a customer",
+            classes="half_screen",
+        )
+        yield Select(
+            options=(
+                (destination.address, destination)
+                for destination in all_destinations()
+            ),
+            id="select_destination",
+            prompt="Select a destination",
+            classes="half_screen",
+        )
+        yield Select(
+            options=((driver.name, driver) for driver in all_drivers()),
+            id="select_driver",
+            prompt="Select a driver",
+            classes="half_screen",
+        )
+        yield Button("Submit Package", id="submit_package")
+        yield PackageInfo(id="package_info")
+
+    def on_select_changed(self, event: Select.Changed) -> None:
+        self.query_one(PackageInfo).customer = self.query_one(
+            "#select_customer"
+        ).value
+        self.query_one(PackageInfo).destination = self.query_one(
+            "#select_destination"
+        ).value
+        self.query_one(PackageInfo).driver = self.query_one(
+            "#select_driver"
+        ).value
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        new_package(
+            status_id=1,
+            customer_id=self.query_one(PackageInfo).customer.id,
+            destination_id=self.query_one(PackageInfo).destination.id,
+            driver_id=self.query_one(PackageInfo).driver.id,
+        )
 
 
 class ShowMyPackages(VerticalScroll):
@@ -406,21 +419,6 @@ class ShowMyPackages(VerticalScroll):
     #     table.cursor_type = "row"
 
 
-class UpdatePackage(ModalScreen):
-    """update a package from this screen"""
-
-    def compose(self) -> ComposeResult:
-        yield Grid(
-            Label("Hello!"),
-            Button("Quit", variant="error", id="quit"),
-            Button("Cancel", variant="primary", id="cancel"),
-            id="dialog",
-        )
-
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        self.app.pop_screen()
-
-
 class ShowPackagesNew2(Widget):
     search = ""
 
@@ -440,13 +438,14 @@ class ShowPackagesNew2(Widget):
         table = self.query_one("#packages", DataTable)
         table.cursor_type = "row"
         table.zebra_stripes = True
-        table.add_columns("id", "status", "customer", "destination")
+        table.add_columns("id", "status", "customer", "destination", "driver")
         for package in packages:
             table.add_row(
                 package.id,
                 package.status.name,
                 package.customer.name,
                 package.destination.name,
+                package.driver.name,
             )
 
     def action_show_tab(self, tab: str) -> None:
@@ -457,12 +456,142 @@ class ShowPackagesNew2(Widget):
         self.search = event.value
         self.update_filter()
 
+    class UpdatePackage(Screen):
+        BINDINGS = [("escape", "app.pop_screen", "Pop screen")]
+        """update a package from this screen"""
+
+        def __init__(self, row: list) -> None:
+            super().__init__()
+            self.package_id = row[0]
+            self.package_status = row[1]
+            self.package_customer = row[2]
+            self.package_destination = row[3]
+            self.package_driver = row[4]
+            self.row = row
+
+        def compose(self) -> ComposeResult:
+            package = single_package(self.package_id).one()
+
+            with Horizontal():
+                yield Label(
+                    f"Status: {package.status.name}",
+                    classes="package_labels",
+                )
+                yield Select(
+                    options=(
+                        (status.name, status.id) for status in all_statuses()
+                    ),
+                    id="update_status",
+                    prompt=package.status.name,
+                    classes="update_package_select",
+                    value=package.status.id,
+                )
+            with Horizontal():
+                yield Label(
+                    f"Customer: {package.customer.name}",
+                    classes="package_labels",
+                )
+
+                yield Select(
+                    options=(
+                        (
+                            f"{customer.name} @ {customer.address}",
+                            customer.id,
+                        )
+                        for customer in all_customers()
+                    ),
+                    id="update_customer",
+                    prompt=package.customer.name,
+                    classes="update_package_select",
+                    value=package.customer.id,
+                )
+            with Horizontal():
+                yield Label(
+                    f"Destination: {package.destination.name}",
+                    classes="package_labels",
+                )
+                yield Select(
+                    options=(
+                        (destination.name, destination.id)
+                        for destination in all_destinations()
+                    ),
+                    id="update_destination",
+                    classes="update_package_select",
+                    prompt=package.destination.name,
+                    value=package.destination.id,
+                )
+
+            with Horizontal():
+                yield Label(
+                    f"Driver: {package.driver.name}",
+                    classes="package_labels",
+                )
+                yield Select(
+                    options=(
+                        (driver.name, driver.id) for driver in all_drivers()
+                    ),
+                    id="update_driver",
+                    classes="update_package_select",
+                    prompt=package.driver.name,
+                    value=package.driver.id,
+                )
+            with Horizontal():
+                yield Button(
+                    "Update",
+                    classes="half_screen",
+                    variant="primary",
+                    id="submit_update",
+                )
+                yield Button(
+                    "Quit",
+                    classes="half_screen",
+                    variant="default",
+                    id="quit_update",
+                )
+
+        def on_select_changed(self, event: Select.Changed) -> None:
+            self.package_customer = self.query_one("#update_customer").value
+            self.package_destination = self.query_one(
+                "#update_destination"
+            ).value
+            self.package_driver = self.query_one("#update_driver").value
+            self.package_status = self.query_one("#update_status").value
+
+        def on_button_pressed(self, event: Button.Pressed) -> None:
+            if event.button.id == "submit_update":
+                self.package_customer = self.query_one(
+                    "#update_customer"
+                ).value
+                self.package_destination = self.query_one(
+                    "#update_destination"
+                ).value
+                self.package_driver = self.query_one("#update_driver").value
+                self.package_status = self.query_one("#update_status").value
+                print(
+                    f"{self.package_id}, {self.package_customer}, {self.package_destination}, {self.package_driver}, {self.package_status}"
+                )
+                # new_destination(name, address, address_x, address_y)
+                update_package(
+                    package_id=self.package_id,
+                    status_id=self.package_status,
+                    customer_id=self.package_customer,
+                    destination_id=self.package_destination,
+                    driver_id=self.package_driver,
+                )
+            else:
+                self.remove()
+
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         table = self.query_one("#packages", DataTable)
         row_data = table.get_row(row_key=event.row_key)
-        self.post_message(row_data)
-        # self.app.push_screen(UpdatePackage(row_data=row_data))
+        print(row_data)
+        app.push_screen(self.UpdatePackage(row_data))
 
+    # def on_button_pressed(self, event: Button.Pressed) -> None:
+    #     print(self.screen.tree)
+    #     self.screen.query_one(
+    #         "#content_switcher", ContentSwitcher
+    #     ).current = event.button.id
     def update_filter(self) -> None:
         packages = [
             package
@@ -477,73 +606,57 @@ class ShowPackagesNew2(Widget):
         table.clear(columns=True)
         table.cursor_type = "row"
         table.zebra_stripes = True
-        table.add_columns("id", "status", "customer", "destination")
+        table.add_columns("id", "status", "customer", "destination", "driver")
         for package in packages:
             table.add_row(
                 package.id,
                 package.status.name,
                 package.customer.name,
                 package.destination.name,
+                package.driver.name,
             )
 
-    # def on_tabs_tab_activated(self, event: Tabs.Clicked):
-    #     pass
 
-    # def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
-    #     self.app.push_screen("UpdatePackage")
+# class ShowPackagesNew(Widget):
+#     def compose(self) -> ComposeResult:
+#         with Horizontal(id="buttons"):
+#             yield Button("All", id="all_packages")
+#             yield Button("In Transit", id="in_transit2")
+#             yield Button("Lost", id="packages_lost")
 
-    # def on_button_pressed(self, event: Button.Pressed) -> None:
-    #     print(self.screen.tree)
-    #     self.screen.query_one(
-    #         "#package_filter", ContentSwitcher
-    #     ).current = event.button.id
+#         with ContentSwitcher(initial="all_packages", id="package_filter"):
+#             with VerticalScroll(id="all_packages"):
+#                 yield DataTable(id="packages")
+#             with VerticalScroll(id="in_transit2"):
+#                 yield ShowPackagesInTransit()
+#             with VerticalScroll(id="packages_lost"):
+#                 yield ShowLostAndFound()
 
-    # 1	In Transit
-    # 2	Delivered
-    # 3	Waiting to be picked up
-    # 4	Lost
+#     def on_mount(self) -> None:
+#         packages = [package for package in all_packages()]
 
+#         table = self.query_one("#packages", DataTable)
+#         table.cursor_type = "row"
+#         table.zebra_stripes = True
+#         table.add_columns("id", "status", "customer", "destination")
+#         for package in packages:
+#             table.add_row(
+#                 package.id,
+#                 package.status.name,
+#                 package.customer.name,
+#                 package.destination.name,
+#             )
 
-class ShowPackagesNew(Widget):
-    def compose(self) -> ComposeResult:
-        with Horizontal(id="buttons"):
-            yield Button("All", id="all_packages")
-            yield Button("In Transit", id="in_transit2")
-            yield Button("Lost", id="packages_lost")
+#     def on_button_pressed(self, event: Button.Pressed) -> None:
+#         print(self.screen.tree)
+#         self.screen.query_one(
+#             "#package_filter", ContentSwitcher
+#         ).current = event.button.id
 
-        with ContentSwitcher(initial="all_packages", id="package_filter"):
-            with VerticalScroll(id="all_packages"):
-                yield DataTable(id="packages")
-            with VerticalScroll(id="in_transit2"):
-                yield ShowPackagesInTransit()
-            with VerticalScroll(id="packages_lost"):
-                yield ShowLostAndFound()
-
-    def on_mount(self) -> None:
-        packages = [package for package in all_packages()]
-
-        table = self.query_one("#packages", DataTable)
-        table.cursor_type = "row"
-        table.zebra_stripes = True
-        table.add_columns("id", "status", "customer", "destination")
-        for package in packages:
-            table.add_row(
-                package.id,
-                package.status.name,
-                package.customer.name,
-                package.destination.name,
-            )
-
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        print(self.screen.tree)
-        self.screen.query_one(
-            "#package_filter", ContentSwitcher
-        ).current = event.button.id
-
-    # 1	In Transit
-    # 2	Delivered
-    # 3	Waiting to be picked up
-    # 4	Lost
+#     # 1	In Transit
+#     # 2	Delivered
+#     # 3	Waiting to be picked up
+#     # 4	Lost
 
 
 class BSOD(Screen):
@@ -578,13 +691,14 @@ class ShowLostAndFound(VerticalScroll):
         table = self.query_one("#packages_lost", DataTable)
         table.cursor_type = "row"
         table.zebra_stripes = True
-        table.add_columns("id", "status", "customer", "destination")
+        table.add_columns("id", "status", "customer", "destination", "driver")
         for package in packages:
             table.add_row(
                 package.id,
                 package.status.name,
                 package.customer.name,
                 package.destination.name,
+                package.driver.name,
             )
 
     def on_input_changed(self, event: Input.Changed) -> None:
@@ -605,13 +719,14 @@ class ShowLostAndFound(VerticalScroll):
         table.clear(columns=True)
         table.cursor_type = "row"
         table.zebra_stripes = True
-        table.add_columns("id", "status", "customer", "destination")
+        table.add_columns("id", "status", "customer", "destination", "driver")
         for package in packages:
             table.add_row(
                 package.id,
                 package.status.name,
                 package.customer.name,
                 package.destination.name,
+                package.driver.name,
             )
 
     def key_c(self):
@@ -634,13 +749,14 @@ class ShowPackagesInTransit(VerticalScroll):
         table = self.query_one("#packages_in_transit", DataTable)
         table.cursor_type = "row"
         table.zebra_stripes = True
-        table.add_columns("id", "status", "customer", "destination")
+        table.add_columns("id", "status", "customer", "destination", "driver")
         for package in packages:
             table.add_row(
                 package.id,
                 package.status.name,
                 package.customer.name,
                 package.destination.name,
+                package.driver.name,
             )
 
     def on_input_changed(self, event: Input.Changed) -> None:
@@ -661,13 +777,14 @@ class ShowPackagesInTransit(VerticalScroll):
         table.clear(columns=True)
         table.cursor_type = "row"
         table.zebra_stripes = True
-        table.add_columns("id", "status", "customer", "destination")
+        table.add_columns("id", "status", "customer", "destination", "driver")
         for package in packages:
             table.add_row(
                 package.id,
                 package.status.name,
                 package.customer.name,
                 package.destination.name,
+                package.driver.name,
             )
 
     def key_c(self):
@@ -817,16 +934,13 @@ class ShowDestinations(VerticalScroll):
 
 
 class TrackyMcPackage(App):
-    # async def on_load(self) -> None:
-    #     await self.bind("ctrl+c", "quit", "Quit")
-
-    # engine = create_engine("sqlite:///fpds.db")
-    # with Session(engine) as session:
     CSS_PATH = "styles.css"
     TITLE = "Tracky McPackage"
     SUB_TITLE = "We'll get it there...eventually"
-    current_driver = 4
-    SCREENS = {"bsod": BSOD(), "UpdatePackage": UpdatePackage()}
+    current_driver = random.randint(1, 8)
+    SCREENS = {
+        "bsod": BSOD(),
+    }
     BINDINGS = [("b", "push_screen('bsod')", "BSOD")]
 
     def compose(self) -> ComposeResult:
@@ -852,22 +966,16 @@ class TrackyMcPackage(App):
                 with VerticalScroll(id="all_destinations"):
                     yield ShowDestinations()
                 with VerticalScroll(id="add_customer"):
-                    # yield AddField()
                     yield AddCustomer()
                 with VerticalScroll(id="add_destination"):
                     yield AddDestination()
-                with VerticalScroll(id="update_package"):
-                    yield UpdatePackage()
-
-    def on_load(self):
-        self.log("In the log handler", pi=3.141529)
+                with VerticalScroll(id="add_package"):
+                    yield AddPackage()
+                yield Button("Exit", id="exit_button")
 
     def on_mount(self) -> None:
         logging.debug("Logged via TextualHandler")
         self.log(self.tree)
-
-    # def on_key(self, event: Key) -> None:
-    #     self.exit()
 
 
 if __name__ == "__main__":

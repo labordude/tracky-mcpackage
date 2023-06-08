@@ -41,8 +41,14 @@ with Session(engine) as session:
     def all_packages():
         return session.scalars(select(Package))
 
+    def single_package(search):
+        return session.scalars(select(Package).where(Package.id == search))
+
     def all_customers():
         return session.scalars(select(Customer))
+
+    def all_statuses():
+        return session.scalars(select(Status))
 
     def all_destinations():
         return session.scalars(select(Destination))
@@ -129,11 +135,20 @@ with Session(engine) as session:
         #     )
 
     # [X] change the status on a package
-    def update_package_status(package_id, new_status_id):
+    def update_package(
+        package_id, status_id, customer_id, destination_id, driver_id
+    ):
         statement = (
             update(Package)
             .where(Package.id == package_id)
-            .values({Package.status_id: new_status_id})
+            .values(
+                {
+                    Package.status_id: status_id,
+                    Package.customer_id: customer_id,
+                    Package.destination_id: destination_id,
+                    Package.driver_id: driver_id,
+                }
+            )
             .returning(Package)
         )
         result = session.execute(statement).first()

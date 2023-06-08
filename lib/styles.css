@@ -43,9 +43,9 @@ BSOD > Static {
   width: 1fr;
   color: white;
 }
-.content {
+/* .content {
   column-span: 3;
-}
+} */
 .buttons {
   margin-top: 0;
 }
@@ -56,6 +56,8 @@ BSOD > Static {
   /* background: $panel; */
   border: round $primary;
   width: 4fr;
+  height: 100vh;
+  content-align: center middle;
 }
 #package_filter > ContentSwitcher {
   height: 100%;
@@ -73,16 +75,19 @@ BSOD > Static {
 #destination_info {
   height: auto;
 }
-
+.half_screen {
+  width: 1fr;
+}
 Input {
   margin: 0 0 0 0;
 }
 Input.half_screen {
   width: 1fr;
 }
-Home {
-  align: center middle;
-  margin: 0 0;
+#content_switcher > .home {
+  content-align: center middle;
+  height: 100%;
+  width: 100%;
 }
 
 .box {
@@ -96,8 +101,6 @@ ListView {
 }
 
 Label {
-  padding: 0 0;
-
   padding: 0 0;
 }
 Header {
@@ -116,9 +119,18 @@ Footer {
   background: blue;
   color: white;
 }
-
-UpdatePackage {
-  align: center middle;
+.package_labels {
+  content-align: left middle;
+  margin: 1;
+  width: 1fr;
+}
+.update_package_select {
+  width: 3fr;
+}
+#update_package {
+  content-align: center middle;
+  width: 50%;
+  height: 50%;
 }
 
 #dialog {
@@ -135,8 +147,4 @@ UpdatePackage {
   height: 1fr;
   width: 1fr;
   content-align: center middle;
-}
-
-Button {
-  width: 100%;
 }
