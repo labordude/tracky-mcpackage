@@ -61,8 +61,8 @@ class Destination(Base):
     __tablename__ = "destinations"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str]
-    address: Mapped[str]
+    name: Mapped[str] = mapped_column(nullable=False)
+    address: Mapped[str] = mapped_column(nullable=False)
     address_coordinates: Mapped[Point] = composite(
         mapped_column("address_x"), mapped_column("address_y")
     )
@@ -79,7 +79,7 @@ class Customer(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(nullable=False)
-    address: Mapped[str]
+    address: Mapped[str] = mapped_column(nullable=False)
     address_coordinates: Mapped[Point] = composite(
         mapped_column("address_x"), mapped_column("address_y")
     )

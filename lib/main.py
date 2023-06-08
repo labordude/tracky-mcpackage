@@ -519,6 +519,13 @@ class AddPackage(Widget):
             destination_id=self.query_one(PackageInfo).destination.id,
             driver_id=self.query_one(PackageInfo).driver.id,
         )
+        self.query_one("#select_customer").value = ""
+        self.query_one("#select_destination").value = ""
+        self.query_one("#select_driver").value = ""
+        self.app.query_one(
+            "#main_content", TabbedContent
+        ).active = "all_packages"
+        pass
 
 
 # class ShowMyPackages(Widget):
@@ -839,11 +846,9 @@ class ShowPackagesNew2(Widget):
                     destination_id=self.package_destination,
                     driver_id=self.package_driver,
                 )
-                self.parent.mount(self.parent.CreatePackageTable())
-                self.remove()
-            else:
-                self.parent.mount(self.parent.CreatePackageTable())
-                self.remove()
+
+            self.parent.mount(self.parent.CreatePackageTable())
+            self.remove()
 
     class CreatePackageTable(Widget):
         def compose(self) -> ComposeResult:
@@ -882,28 +887,34 @@ class ShowPackagesNew2(Widget):
         table.remove()
 
     def update_filter(self) -> None:
-        packages = [
-            package
-            for package in all_packages()
-            if (
-                self.search.upper() in package.customer.name.upper()
-                or self.search.upper() in package.destination.name.upper()
+        try:
+            packages = [
+                package
+                for package in all_packages()
+                if (
+                    self.search.upper() in package.destination.name.upper()
+                    or self.search.upper() in package.driver.name.upper()
+                    or self.search.upper() in package.customer.name.upper()
+                )
+            ]
+            table = self.query_one("#packages", DataTable)
+            table.clear(columns=True)
+            table.cursor_type = "row"
+            table.zebra_stripes = True
+            table.add_columns(
+                "id", "status", "customer", "destination", "driver"
             )
-        ]
-
-        table = self.query_one("#packages", DataTable)
-        table.clear(columns=True)
-        table.cursor_type = "row"
-        table.zebra_stripes = True
-        table.add_columns("id", "status", "customer", "destination", "driver")
-        for package in packages:
-            table.add_row(
-                package.id,
-                package.status.name,
-                package.customer.name,
-                package.destination.name,
-                package.driver.name,
-            )
+            for package in packages:
+                table.add_row(
+                    package.id,
+                    package.status.name,
+                    package.customer.name,
+                    package.destination.name,
+                    package.driver.name,
+                )
+        except Exception as err:
+            self.log(self.parent.tree)
+            print("package_filter_goes_BOOM", err)
 
 
 class BSOD(Screen):
@@ -1094,9 +1105,10 @@ class ShowCustomers(Widget):
         self.update_filter()
 
     def update_filter(self) -> None:
-        customers = [customer for customer in search_by_customer(self.search)]
-        self.log(self.tree)
         try:
+            customers = [
+                customer for customer in search_by_customer(self.search)
+            ]
             table = self.query_one("#customers", DataTable)
             table.clear(columns=True)
             table.cursor_type = "row"
@@ -1257,18 +1269,22 @@ class ShowDestinations(Widget):
         self.update_filter()
 
     def update_filter(self) -> None:
-        destinations = [
-            destination for destination in search_by_destination(self.search)
-        ]
-        table = self.query_one("#destinations", DataTable)
-        table.clear(columns=True)
-        table.cursor_type = "row"
-        table.zebra_stripes = True
-        table.add_columns("id", "name", "address")
-        for destination in destinations:
-            table.add_row(
-                destination.id, destination.name, destination.address
-            )
+        try:
+            destinations = [
+                destination
+                for destination in search_by_destination(self.search)
+            ]
+            table = self.query_one("#destinations", DataTable)
+            table.clear(columns=True)
+            table.cursor_type = "row"
+            table.zebra_stripes = True
+            table.add_columns("id", "name", "address")
+            for destination in destinations:
+                table.add_row(
+                    destination.id, destination.name, destination.address
+                )
+        except Exception:
+            print("destinations_update_filter went boom")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         destinations = [
@@ -1287,6 +1303,117 @@ class ShowDestinations(Widget):
     def key_c(self):
         table = self.query_one("#destinations", DataTable)
         table.cursor_type = "row"
+
+    class UpdateDestination(Widget):
+        BINDINGS = [("escape", "app.pop_screen", "Pop screen")]
+        """update a package from this screen"""
+
+        def __init__(self, row: list) -> None:
+            super().__init__()
+            self.destination_id = row[0]
+            self.destination_name = row[1]
+            self.destination_address = row[2]
+            self.row = row
+
+        def compose(self) -> ComposeResult:
+            destination = single_destination(self.destination_id).one()
+
+            with Horizontal():
+                yield Label(
+                    f"Destination: {destination.name}",
+                    classes="package_labels",
+                )
+
+                yield Input(
+                    id="update_destination_name",
+                    placeholder=destination.name,
+                    classes="update_package_select",
+                    value=destination.name,
+                )
+            with Horizontal():
+                yield Label(
+                    f"Destination: {destination.address}",
+                    classes="package_labels",
+                )
+                yield Input(
+                    id="update_destination_address",
+                    classes="update_package_select",
+                    placeholder=destination.address,
+                    value=destination.address,
+                )
+
+            with Horizontal():
+                yield Button(
+                    "Update",
+                    classes="half_screen",
+                    variant="primary",
+                    id="submit_update",
+                )
+                yield Button(
+                    "Quit",
+                    classes="half_screen",
+                    variant="default",
+                    id="quit_update",
+                )
+
+        def on_input_changed(self, event: Input.Changed) -> None:
+            self.destination_name = self.query_one(
+                "#update_destination_name"
+            ).value
+            self.destination_address = self.query_one(
+                "#update_destination_address"
+            ).value
+
+        def on_button_pressed(self, event: Button.Pressed) -> None:
+            if event.button.id == "submit_update":
+                self.destination_name = self.query_one(
+                    "#update_destination_name"
+                ).value
+                self.destination_address = self.query_one(
+                    "#update_destination_address"
+                ).value
+                print(
+                    f"{self.destination_id}, {self.destination_name}, {self.destination_address}"
+                )
+                # new_destination(name, address, address_x, address_y)
+                update_destination(
+                    destination_id=self.destination_id,
+                    destination_name=self.destination_name,
+                    destination_address=self.destination_address,
+                )
+
+            self.parent.mount(self.parent.CreateDestinationTable())
+            self.remove()
+
+    class CreateDestinationTable(Widget):
+        def compose(self) -> ComposeResult:
+            yield DataTable(id="destinations")
+
+        def on_mount(self) -> None:
+            destinations = [destination for destination in all_destinations()]
+            table = self.query_one("#destinations", DataTable)
+            table.clear(columns=True)
+            table.cursor_type = "row"
+            table.zebra_stripes = True
+            table.add_columns("id", "name", "address")
+            for destination in destinations:
+                table.add_row(
+                    destination.id, destination.name, destination.address
+                )
+
+        def on_data_table_row_selected(
+            self, event: DataTable.RowSelected
+        ) -> None:
+            table = self.query_one("#destinations", DataTable)
+            row_data = table.get_row(row_key=event.row_key)
+            self.parent.mount(self.parent.UpdateDestination(row_data))
+            self.remove()
+
+    def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        table = self.query_one("#destinations", DataTable)
+        row_data = table.get_row(row_key=event.row_key)
+        self.mount(self.UpdateDestination(row_data))
+        table.remove()
 
 
 class TrackyMcPackage(App):

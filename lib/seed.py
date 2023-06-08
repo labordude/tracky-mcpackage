@@ -61,7 +61,7 @@ if __name__ == "__main__":
             customers.append(customer)
 
         drivers = []
-        for i in range(10):
+        for i in range(15):
             driver = Driver(
                 name=fake.unique.name(),
                 start_location=Point(
@@ -86,16 +86,16 @@ if __name__ == "__main__":
             destinations.append(destination)
 
         packages = []
-        for i in range(500):
+        for i in range(200):
             package = Package(
                 status_id=random.randint(1, 4),
                 customer_id=random.randint(1, 50),
                 destination_id=random.randint(1, 50),
-                driver_id=random.randint(1, 10),
+                driver_id=random.randint(1, 15),
             )
             session.add(package)
             session.commit()
             packages.append(package)
         session.commit()
-        ipdb.set_trace()
+        # ipdb.set_trace()
         session.close()

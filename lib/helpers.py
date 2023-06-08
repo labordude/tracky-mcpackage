@@ -57,8 +57,8 @@ with Session(engine) as session:
         return session.scalars(select(Destination))
 
     def single_destination(search):
-        return session.scalars(select(Destination)).where(
-            Destination.id == search
+        return session.scalars(
+            select(Destination).where(Destination.id == search)
         )
 
     def search_by_customer(search):
@@ -86,10 +86,12 @@ with Session(engine) as session:
             select(Package)
             .join(Package.customer)
             .join(Package.destination)
+            .join(Package.driver)
             .where(
                 or_(
-                    Package.destination.name.contains(search),
                     Package.customer.name.contains(search),
+                    Package.destination.name.contains(search),
+                    Package.driver.name.contains(search),
                 )
             )
         )
