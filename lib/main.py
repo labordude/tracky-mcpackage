@@ -155,6 +155,26 @@ class CurrentDriver(Widget):
         return f"Currently logged on: {self.name}"
 
 
+MARKDOWN = """\
+        # Please login to the system.
+        """
+EXAMPLE_MARKDOWN = """\
+    # Markdown Document
+
+    This is an example of Textual's `Markdown` widget.
+
+    ## Features
+
+    Markdown syntax and extensions are supported.
+
+    - Typography *emphasis*, **strong**, `inline code` etc.
+    - Headers
+    - Lists (bullet and ordered)
+    - Syntax highlighted code blocks
+    - Tables!
+    """
+
+
 class Home(Widget):
     # def compose(self) -> ComposeResult:
     #     driver = session.get(Driver, current_driver)
@@ -166,8 +186,11 @@ class Home(Widget):
     #         prompt=driver.name,
     #         value=driver.id,
     #     )
+
     def compose(self) -> ComposeResult:
         with Grid(classes="grid_container"):
+            yield Label("hello", classes="two instructions")
+            # yield Markdown(EXAMPLE_MARKDOWN)
             drivers = [driver for driver in all_drivers()]
             for driver in drivers:
                 yield Button(f"{driver.name}")
@@ -453,6 +476,133 @@ class ShowMyPackages(Widget):
     #     table.cursor_type = "row"
 
 
+class UpdatePackageLabel(Widget):
+    BINDINGS = [("escape", "app.pop_screen", "Pop screen")]
+    """update a package from this screen"""
+
+    # def __init__(self, row: list) -> None:
+    #     super().__init__()
+    #     self.package_id = row[0]
+    #     self.package_status = row[1]
+    #     self.package_customer = row[2]
+    #     self.package_destination = row[3]
+    #     self.package_driver = row[4]
+    #     self.row = row
+
+    def compose(self) -> ComposeResult:
+        yield Label("This is where you update a package")
+        # package = single_package(self.package_id).one()
+
+        # with Horizontal():
+        #     yield Label(
+        #         f"Status: {package.status.name}",
+        #         classes="package_labels",
+        #     )
+        #     yield Select(
+        #         options=(
+        #             (status.name, status.id) for status in all_statuses()
+        #         ),
+        #         id="update_status",
+        #         prompt=package.status.name,
+        #         classes="update_package_select",
+        #         value=package.status.id,
+        #     )
+        # with Horizontal():
+        #     yield Label(
+        #         f"Customer: {package.customer.name}",
+        #         classes="package_labels",
+        #     )
+
+        #     yield Select(
+        #         options=(
+        #             (
+        #                 f"{customer.name} @ {customer.address}",
+        #                 customer.id,
+        #             )
+        #             for customer in all_customers()
+        #         ),
+        #         id="update_customer",
+        #         prompt=package.customer.name,
+        #         classes="update_package_select",
+        #         value=package.customer.id,
+        #     )
+        # with Horizontal():
+        #     yield Label(
+        #         f"Destination: {package.destination.name}",
+        #         classes="package_labels",
+        #     )
+        #     yield Select(
+        #         options=(
+        #             (destination.name, destination.id)
+        #             for destination in all_destinations()
+        #         ),
+        #         id="update_destination",
+        #         classes="update_package_select",
+        #         prompt=package.destination.name,
+        #         value=package.destination.id,
+        #     )
+
+        # with Horizontal():
+        #     yield Label(
+        #         f"Driver: {package.driver.name}",
+        #         classes="package_labels",
+        #     )
+        #     yield Select(
+        #         options=(
+        #             (driver.name, driver.id) for driver in all_drivers()
+        #         ),
+        #         id="update_driver",
+        #         classes="update_package_select",
+        #         prompt=package.driver.name,
+        #         value=package.driver.id,
+        #     )
+        # with Horizontal():
+        #     yield Button(
+        #         "Update",
+        #         classes="half_screen",
+        #         variant="primary",
+        #         id="submit_update",
+        #     )
+        #     yield Button(
+        #         "Quit",
+        #         classes="half_screen",
+        #         variant="default",
+        #         id="quit_update",
+        #     )
+
+    # def on_select_changed(self, event: Select.Changed) -> None:
+    #     self.package_customer = self.query_one("#update_customer").value
+    #     self.package_destination = self.query_one(
+    #         "#update_destination"
+    #     ).value
+    #     self.package_driver = self.query_one("#update_driver").value
+    #     self.package_status = self.query_one("#update_status").value
+
+    # def on_button_pressed(self, event: Button.Pressed) -> None:
+    #     if event.button.id == "submit_update":
+    #         self.package_customer = self.query_one(
+    #             "#update_customer"
+    #         ).value
+    #         self.package_destination = self.query_one(
+    #             "#update_destination"
+    #         ).value
+    #         self.package_driver = self.query_one("#update_driver").value
+    #         self.package_status = self.query_one("#update_status").value
+    #         print(
+    #             f"{self.package_id}, {self.package_customer}, {self.package_destination}, {self.package_driver}, {self.package_status}"
+    #         )
+    #         # new_destination(name, address, address_x, address_y)
+    #         update_package(
+    #             package_id=self.package_id,
+    #             status_id=self.package_status,
+    #             customer_id=self.package_customer,
+    #             destination_id=self.package_destination,
+    #             driver_id=self.package_driver,
+    #         )
+    #     else:
+    #         self.remove()
+
+
 class ShowPackagesNew2(Widget):
     search = ""
 
@@ -484,7 +634,7 @@ class ShowPackagesNew2(Widget):
         self.search = event.value
         self.update_filter()
 
-    class UpdatePackage(Screen):
+    class UpdatePackage(Widget):
         BINDINGS = [("escape", "app.pop_screen", "Pop screen")]
         """update a package from this screen"""
 
@@ -606,14 +756,50 @@ class ShowPackagesNew2(Widget):
                     destination_id=self.package_destination,
                     driver_id=self.package_driver,
                 )
-            else:
+                self.parent.mount(self.parent.CreatePackageTable())
                 self.remove()
+            else:
+                self.parent.mount(self.parent.CreatePackageTable())
+                self.remove()
+
+    class CreatePackageTable(Widget):
+        def compose(self) -> ComposeResult:
+            yield DataTable(id="packages")
+
+        def on_mount(self) -> None:
+            packages = [package for package in all_packages()]
+
+            table = self.query_one("#packages", DataTable)
+            table.cursor_type = "row"
+            table.zebra_stripes = True
+            table.add_columns(
+                "id", "status", "customer", "destination", "driver"
+            )
+            for package in packages:
+                table.add_row(
+                    package.id,
+                    package.status.name,
+                    package.customer.name,
+                    package.destination.name,
+                    package.driver.name,
+                )
+
+        def on_data_table_row_selected(
+            self, event: DataTable.RowSelected
+        ) -> None:
+            table = self.query_one("#packages", DataTable)
+            row_data = table.get_row(row_key=event.row_key)
+            self.parent.mount(self.parent.UpdatePackage(row_data))
+            self.remove()
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         table = self.query_one("#packages", DataTable)
         row_data = table.get_row(row_key=event.row_key)
-        print(row_data)
-        app.push_screen(self.UpdatePackage(row_data))
+        self.mount(self.UpdatePackage(row_data))
+        table.remove()
+
+        # print(row_data)
+        # app.push_screen(self.UpdatePackage(row_data))
 
     # def on_button_pressed(self, event: Button.Pressed) -> None:
     #     print(self.screen.tree)

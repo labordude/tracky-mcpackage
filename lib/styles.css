@@ -34,10 +34,14 @@ Button {
 }
 .two {
   column-span: 2;
+  color: white;
 }
 .input_fields,
 .btn_container {
   height: auto;
+}
+.instructions {
+  height: 10;
 }
 .half_screen {
   width: 1fr;
@@ -52,26 +56,25 @@ Input.half_screen {
   content-align: center middle;
 }
 
-TabbedContent {
-  border: solid lightskyblue;
+TabbedContent,
+ContentSwitcher,
+TabPane {
   height: 100%;
   margin: 0 0 0 0;
   padding: 0 0 0 0;
 }
-
+/* 
 ContentSwitcher {
-  border: solid lightcoral;
   height: 100%;
   margin: 0 0 0 0;
   padding: 0 0 0 0;
 }
 
 TabPane {
-  border: solid greenyellow;
   height: 100%;
   margin: 0 0 0 0;
   padding: 0 0 0 0;
-}
+} */
 Header {
   dock: top;
   height: 2;
@@ -88,11 +91,11 @@ Footer {
   background: blue;
   color: white;
 }
-/* .package_labels {
+.package_labels {
   content-align: left middle;
   margin: 1;
   width: 1fr;
-} */
+}
 .update_package_select {
   width: 3fr;
 }
