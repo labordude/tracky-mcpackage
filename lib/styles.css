@@ -12,6 +12,13 @@ Screen {
 DataTable {
   height: 75%;
 }
+TabbedContent,
+ContentSwitcher,
+TabPane {
+  height: 100%;
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
+}
 .box {
   height: auto;
   border: solid white;
@@ -58,13 +65,7 @@ Input.half_screen {
 .max_width {
   width: 100%;
 }
-TabbedContent,
-ContentSwitcher,
-TabPane {
-  height: 100%;
-  margin: 0 0 0 0;
-  padding: 0 0 0 0;
-}
+
 TabPane {
   border: pink solid;
 }

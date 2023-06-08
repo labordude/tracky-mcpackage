@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import logging
 import random
+
+# import matplotlib.pyplot as plt
 from textual import on, events
 from textual.app import App, ComposeResult, RenderResult
 from textual.color import Color
@@ -226,11 +228,6 @@ class CustomerInfo(Widget):
 
     def render(self) -> str:
         return f"Customer(name={self.name},address={self.address}, address_coordinates=Point({self.coord_x}, {self.coord_y}))"
-
-
-class DisplayGrid(Widget):
-    def compose(self) -> None:
-        pass
 
 
 class AddCustomer(Widget):
@@ -1196,12 +1193,13 @@ class TrackyMcPackage(App):
             "Packages",
             "Customers",
             "Destinations",
+            "Best Path",
             id="main_content",
         ):
             with TabPane("Home", id="home"):
                 yield Home()
-            with TabPane("My day", id="my_packages"):
-                yield ShowMyPackages()
+            # with TabPane("My day", id="my_packages"):
+            #     yield ShowMyPackages()
                 # yield Input(placeholder="Search...", id="search_all_packages")
                 # yield DataTable(id="packages", classes="clear_css")
             with TabPane("Packages"):
@@ -1226,7 +1224,8 @@ class TrackyMcPackage(App):
                         yield ShowDestinations()
                     with TabPane("Add new destination"):
                         yield AddDestination()
-
+            with TabPane("BestPath", id="best_path"):
+                yield Label("Coming Soon")
         # with Vertical(id="menu"):
         #     yield Menu(classes="box", id="sidebar")
         # with ContentSwitcher(
