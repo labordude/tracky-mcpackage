@@ -6,17 +6,39 @@ Screen {
   overflow-y: auto;
 }
 
+#current_driver_info {
+  height: 4;
+}
+DataTable {
+  height: 75%;
+}
 .box {
   height: auto;
   border: solid white;
+  padding: 0 0 0 0;
+  margin: 0 0 0 0;
 }
-.search > Button {
-  width: 1fr;
+Button {
+  width: 95%;
+  border: none;
 }
-.buttons {
-  margin-top: 0;
+.search_bar {
+  width: 3fr;
 }
-
+.grid_container {
+  layout: grid;
+  grid-size: 2;
+  grid-gutter: 1;
+  margin: 0;
+  height: 75%;
+}
+.two {
+  column-span: 2;
+}
+.input_fields,
+.btn_container {
+  height: auto;
+}
 .half_screen {
   width: 1fr;
 }
@@ -25,6 +47,9 @@ Input {
 }
 Input.half_screen {
   width: 1fr;
+}
+.center {
+  content-align: center middle;
 }
 
 TabbedContent {
@@ -37,11 +62,15 @@ TabbedContent {
 ContentSwitcher {
   border: solid lightcoral;
   height: 100%;
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
 }
 
 TabPane {
   border: solid greenyellow;
   height: 100%;
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
 }
 Header {
   dock: top;

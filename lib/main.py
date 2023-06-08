@@ -146,32 +146,39 @@ class Menu(VerticalScroll):
 
 
 class CurrentDriver(Widget):
-    driver = reactive("")
-    name = reactive("No one logged in")
-    driver_id = reactive(int(current_driver))
+    name = reactive("No")
+
+    def __init__(self, driver):
+        self.driver = driver
 
     def render(self) -> str:
         return f"Currently logged on: {self.name}"
 
 
 class Home(Widget):
+    # def compose(self) -> ComposeResult:
+    #     driver = session.get(Driver, current_driver)
+    #     yield Static(self.tree)
+    #     yield Label("Choose your login:")
+    #     yield Select(
+    #         options=((driver.name, driver.id) for driver in all_drivers()),
+    #         id="driver_login",
+    #         prompt=driver.name,
+    #         value=driver.id,
+    #     )
     def compose(self) -> ComposeResult:
-        driver = session.get(Driver, current_driver)
+        with Grid(classes="grid_container"):
+            drivers = [driver for driver in all_drivers()]
+            for driver in drivers:
+                yield Button(f"{driver.name}")
 
-        yield CurrentDriver()
-        yield Label("Choose your login:")
-        yield Select(
-            options=((driver.name, driver.id) for driver in all_drivers()),
-            id="driver_login",
-            prompt=driver.name,
-            value=driver.id,
-        )
-
-    def on_input_changed(self, event: Input.Changed) -> None:
-        current_driver = session.get(
-            Driver, self.query_one("#driver_login").value
-        )
-        self.query_one(CurrentDriver).name = current_driver.name
+    def on_select_changed(self, event: Select.Changed) -> None:
+        # current_driver = session.get(
+        #     Driver, self.query_one("#driver_login").value
+        # )
+        new_driver = self.query_one("#driver_login").value
+        current_driver = session.get(Driver, new_driver)
+        # self.query_one(CurrentDriver).name = current_driver.name
 
 
 class CustomerInfo(Widget):
@@ -190,15 +197,20 @@ class DisplayGrid(Widget):
 
 class AddCustomer(Widget):
     def compose(self) -> ComposeResult:
-        yield Label("Enter the new customer's information")
+        with Grid(classes="grid_container"):
+            yield Label("Enter the new customer's information", classes="two")
 
-        yield Input(
-            placeholder="Enter a customer name", id="new_customer_name"
-        )
-        yield Input(
-            placeholder="Enter a customer address", id="new_customer_address"
-        )
-        with Horizontal():
+            yield Input(
+                placeholder="Enter a customer name",
+                id="new_customer_name",
+                classes="two",
+            )
+            yield Input(
+                placeholder="Enter a customer address",
+                id="new_customer_address",
+                classes="two",
+            )
+
             yield Input(
                 placeholder="Enter customer x coordinates",
                 id="new_customer_coordinates_x",
@@ -209,9 +221,14 @@ class AddCustomer(Widget):
                 id="new_customer_coordinates_y",
                 classes="half_screen",
             )
-
-        yield Button("Submit Customer", id="submit_customer")
-        yield CustomerInfo(id="customer_info")
+            # with Horizontal(classes="btn_container"):
+            yield Button(
+                "Submit Customer",
+                id="btn_submit_customer",
+                classes="half_screen",
+            )
+            yield Button("Quit", id="btn_quit_customer", classes="half_screen")
+            yield CustomerInfo(id="customer_info", classes="two")
 
     def on_input_changed(self, event: Input.Changed) -> None:
         self.query_one(CustomerInfo).name = self.query_one(
@@ -278,16 +295,22 @@ class DestinationInfo(Widget):
 
 class AddDestination(Widget):
     def compose(self) -> ComposeResult:
-        yield Label("Enter the new destination's information")
+        with Grid(classes="grid_container"):
+            yield Label(
+                "Enter the new destination's information", classes="two"
+            )
 
-        yield Input(
-            placeholder="Enter a destination name", id="new_destination_name"
-        )
-        yield Input(
-            placeholder="Enter a destination address",
-            id="new_destination_address",
-        )
-        with Horizontal():
+            yield Input(
+                placeholder="Enter a destination name",
+                id="new_destination_name",
+                classes="two",
+            )
+            yield Input(
+                placeholder="Enter a destination address",
+                id="new_destination_address",
+                classes="two",
+            )
+
             yield Input(
                 placeholder="Enter destination x coordinates",
                 id="new_destination_coordinates_x",
@@ -298,9 +321,16 @@ class AddDestination(Widget):
                 id="new_destination_coordinates_y",
                 classes="half_screen",
             )
-
-        yield Button("Submit destination", id="submit_destination")
-        yield DestinationInfo(id="destination_info")
+            # with Horizontal(classes="btn_container"):
+            yield Button(
+                "Submit destination",
+                id="btn_submit_destination",
+                classes="half_screen",
+            )
+            yield Button(
+                "Quit", id="btn_quit_destination", classes="half_screen"
+            )
+            yield DestinationInfo(id="destination_info", classes="two")
 
     def on_input_changed(self, event: Input.Changed) -> None:
         self.query_one(DestinationInfo).name = self.query_one(
@@ -326,7 +356,7 @@ class AddDestination(Widget):
         )
 
 
-class ShowDrivers(VerticalScroll):
+class ShowDrivers(Widget):
     def compose(self) -> ComposeResult:
         yield DataTable(id="drivers")
 
@@ -402,7 +432,7 @@ class AddPackage(Widget):
         )
 
 
-class ShowMyPackages(VerticalScroll):
+class ShowMyPackages(Widget):
     def compose(self) -> ComposeResult:
         yield DataTable(id="my_packages")
 
@@ -427,14 +457,8 @@ class ShowPackagesNew2(Widget):
     search = ""
 
     def compose(self) -> ComposeResult:
-        with TabbedContent("All", "In Transit", "Lost", id="package_filter"):
-            with TabPane("All", id="all_packages", classes="clear_css"):
-                yield Input(placeholder="Search...", id="search_all_packages")
-                yield DataTable(id="packages", classes="clear_css")
-            with TabPane("In Transit", id="in_transit", classes="clear_css"):
-                yield ShowPackagesInTransit(classes="clear_css")
-            with TabPane("Lost", id="packages_lost", classes="clear_css"):
-                yield ShowLostAndFound(classes="clear_css")
+        yield Input(placeholder="Search...", id="search_packages")
+        yield DataTable(id="packages")
 
     def on_mount(self) -> None:
         packages = [package for package in all_packages()]
@@ -682,7 +706,7 @@ Error: 0E : 016F : BFF9B3D4
         yield Static("Press any key to continue [blink]_[/]", id="any-key")
 
 
-class ShowLostAndFound(VerticalScroll):
+class ShowLostAndFound(Widget):
     search = ""
 
     def compose(self) -> ComposeResult:
@@ -738,7 +762,7 @@ class ShowLostAndFound(VerticalScroll):
         table.cursor_type = "row"
 
 
-class ShowPackagesInTransit(VerticalScroll):
+class ShowPackagesInTransit(Widget):
     search = ""
 
     def compose(self) -> ComposeResult:
@@ -796,7 +820,7 @@ class ShowPackagesInTransit(VerticalScroll):
         table.cursor_type = "row"
 
 
-class ShowPackages(VerticalScroll):
+class ShowPackages(Widget):
     def compose(self) -> ComposeResult:
         yield Input(placeholder="Search...", id="search_packages")
         yield DataTable(id="packages")
@@ -828,12 +852,12 @@ class ShowCustomers(Widget):
     search = ""
 
     def compose(self) -> ComposeResult:
-        yield Label("hello")
-        with Horizontal(classes="search"):
-            yield Input(
-                placeholder="Search for a customer", id="search_customer"
-            )
-            yield Button("Search", id="submit_search_customer")
+        yield Input(
+            placeholder="Search for a customer",
+            id="search_customer",
+            classes="search_bar",
+        )
+
         yield DataTable(id="customers")
 
     def on_mount(self) -> None:
@@ -875,18 +899,16 @@ class ShowCustomers(Widget):
         table.cursor_type = "row"
 
 
-class ShowDestinations(VerticalScroll):
+class ShowDestinations(Widget):
     search = ""
 
     def compose(self) -> ComposeResult:
-        with Vertical():
-            with Horizontal(classes="search"):
-                yield Input(
-                    placeholder="Search for a destination",
-                    id="search_destination",
-                )
-                yield Button("Search", id="submit_search_destination")
-            yield DataTable(id="destinations")
+        yield Input(
+            placeholder="Search for a destination",
+            id="search_destination",
+        )
+
+        yield DataTable(id="destinations")
 
     def on_mount(self) -> None:
         destinations = [destination for destination in all_destinations()]
@@ -959,28 +981,33 @@ class TrackyMcPackage(App):
             id="main_content",
         ):
             with TabPane("Home", id="home"):
-                yield Home(classes="box")
+                yield Home()
             with TabPane("My day", id="my_packages"):
-                yield ShowMyPackages(classes="box")
+                yield ShowMyPackages()
                 # yield Input(placeholder="Search...", id="search_all_packages")
                 # yield DataTable(id="packages", classes="clear_css")
-            with TabPane("Packages", id="packages"):
+            with TabPane("Packages"):
                 with TabbedContent():
                     with TabPane("All", id="all_packages"):
-                        yield Input(
-                            placeholder="Search...",
-                            id="search_all_packages",
-                            classes="box",
-                        )
-                        yield DataTable(id="packages", classes="box")
+                        yield ShowPackagesNew2()
                     with TabPane("In Transit", id="in_transit"):
-                        yield ShowPackagesInTransit(classes="box")
+                        yield ShowPackagesInTransit()
                     with TabPane("Lost", id="packages_lost"):
-                        yield ShowLostAndFound(classes="box")
+                        yield ShowLostAndFound()
+                    with TabPane("Add new package", id="add_new_package"):
+                        yield AddPackage()
             with TabPane("Customers", id="customers"):
-                yield ShowCustomers(classes="box")
+                with TabbedContent():
+                    with TabPane("Customers"):
+                        yield ShowCustomers()
+                    with TabPane("Add new customer"):
+                        yield AddCustomer(classes="center")
             with TabPane("Destinations", id="destinations"):
-                yield ShowDestinations(classes="box")
+                with TabbedContent():
+                    with TabPane("Destinations"):
+                        yield ShowDestinations()
+                    with TabPane("Add new destination"):
+                        yield AddDestination()
 
         # with Vertical(id="menu"):
         #     yield Menu(classes="box", id="sidebar")
