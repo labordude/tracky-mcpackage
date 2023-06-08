@@ -154,7 +154,7 @@ class CurrentDriver(Widget):
         return f"Currently logged on: {self.name}"
 
 
-class Home(VerticalScroll):
+class Home(Widget):
     def compose(self) -> ComposeResult:
         driver = session.get(Driver, current_driver)
 
@@ -182,6 +182,10 @@ class CustomerInfo(Widget):
 
     def render(self) -> str:
         return f"Customer(name={self.name},address={self.address}, address_coordinates=Point({self.coord_x}, {self.coord_y}))"
+
+
+class DisplayGrid(Widget):
+    pass
 
 
 class AddCustomer(Widget):
@@ -820,17 +824,17 @@ class ShowPackages(VerticalScroll):
         table.cursor_type = "row"
 
 
-class ShowCustomers(VerticalScroll):
+class ShowCustomers(Widget):
     search = ""
 
     def compose(self) -> ComposeResult:
-        with VerticalScroll():
-            with Horizontal(classes="search"):
-                yield Input(
-                    placeholder="Search for a customer", id="search_customer"
-                )
-                yield Button("Search", id="submit_search_customer")
-            yield DataTable(id="customers")
+        yield Label("hello")
+        with Horizontal(classes="search"):
+            yield Input(
+                placeholder="Search for a customer", id="search_customer"
+            )
+            yield Button("Search", id="submit_search_customer")
+        yield DataTable(id="customers")
 
     def on_mount(self) -> None:
         customers = [customer for customer in all_customers()]
@@ -946,32 +950,63 @@ class TrackyMcPackage(App):
     def compose(self) -> ComposeResult:
         yield Header()
         yield Footer()
-        with Horizontal():
-            with Vertical(id="menu"):
-                yield Menu(classes="box", id="sidebar")
-            with ContentSwitcher(
-                initial="home", id="content_switcher", classes="content"
-            ):
-                yield Home(id="home")
-                with VerticalScroll(id="my_packages"):
-                    yield ShowMyPackages()
-                with VerticalScroll(id="all_packages"):
-                    yield ShowPackagesNew2()
-                with VerticalScroll(id="in_transit"):
-                    yield ShowPackagesInTransit()
-                with VerticalScroll(id="lost_and_found"):
-                    yield ShowLostAndFound()
-                with VerticalScroll(id="all_customers"):
-                    yield ShowCustomers()
-                with VerticalScroll(id="all_destinations"):
-                    yield ShowDestinations()
-                with VerticalScroll(id="add_customer"):
-                    yield AddCustomer()
-                with VerticalScroll(id="add_destination"):
-                    yield AddDestination()
-                with VerticalScroll(id="add_package"):
-                    yield AddPackage()
-                yield Button("Exit", id="exit_button")
+        with TabbedContent(
+            "Home",
+            "My day",
+            "Packages",
+            "Customers",
+            "Destinations",
+            id="main_content",
+        ):
+            with TabPane("Home", id="home"):
+                yield Home(classes="box")
+            with TabPane("My day", id="my_packages"):
+                yield ShowMyPackages(classes="box")
+                # yield Input(placeholder="Search...", id="search_all_packages")
+                # yield DataTable(id="packages", classes="clear_css")
+            with TabPane("Packages", id="packages"):
+                with TabbedContent():
+                    with TabPane("All", id="all_packages"):
+                        yield Input(
+                            placeholder="Search...",
+                            id="search_all_packages",
+                            classes="box",
+                        )
+                        yield DataTable(id="packages", classes="box")
+                    with TabPane("In Transit", id="in_transit"):
+                        yield ShowPackagesInTransit(classes="box")
+                    with TabPane("Lost", id="packages_lost"):
+                        yield ShowLostAndFound(classes="box")
+            with TabPane("Customers", id="customers"):
+                yield ShowCustomers(classes="box")
+            with TabPane("Destinations", id="destinations"):
+                yield ShowDestinations(classes="box")
+
+        # with Vertical(id="menu"):
+        #     yield Menu(classes="box", id="sidebar")
+        # with ContentSwitcher(
+        #     initial="home", id="content_switcher", classes="content"
+        # ):
+        #     yield Home(id="home")
+        #     with VerticalScroll(id="my_packages"):
+        #         yield ShowMyPackages()
+        #     with VerticalScroll(id="all_packages"):
+        #         yield ShowPackagesNew2()
+        #     with VerticalScroll(id="in_transit"):
+        #         yield ShowPackagesInTransit()
+        #     with VerticalScroll(id="lost_and_found"):
+        #         yield ShowLostAndFound()
+        #     with VerticalScroll(id="all_customers"):
+        #         yield ShowCustomers()
+        #     with VerticalScroll(id="all_destinations"):
+        #         yield ShowDestinations()
+        #     with VerticalScroll(id="add_customer"):
+        #         yield AddCustomer()
+        #     with VerticalScroll(id="add_destination"):
+        #         yield AddDestination()
+        #     with VerticalScroll(id="add_package"):
+        #         yield AddPackage()
+        #     yield Button("Exit", id="exit_button")
 
     def on_mount(self) -> None:
         logging.debug("Logged via TextualHandler")

@@ -1,80 +1,22 @@
 Screen {
-  padding: 0;
-  margin: 0;
-}
-.search {
-  height: 2;
+  layout: vertical;
   padding: 0 0 0 0;
   margin: 0 0 0 0;
-  border: none;
-}
-.search > Input {
-  width: 3fr;
-}
-#search_packages {
-  height: 2;
-  padding: 0 0 0 0;
-  margin: 0 0 0 0;
-  border: none;
-}
-BSOD {
-  align: center middle;
-  background: blue;
-  color: white;
+  border: white;
+  overflow-y: auto;
 }
 
-BSOD > Static {
-  width: 70;
+.box {
+  height: auto;
+  border: solid white;
 }
-
-#title {
-  content-align-horizontal: center;
-  text-style: reverse;
-}
-
-#any-key {
-  content-align-horizontal: center;
-}
-
 .search > Button {
   width: 1fr;
 }
-#sidebar {
-  width: 1fr;
-  color: white;
-}
-/* .content {
-  column-span: 3;
-} */
 .buttons {
   margin-top: 0;
 }
-#package_filter {
-  height: 100vh;
-}
-#content_switcher {
-  /* background: $panel; */
-  border: round $primary;
-  width: 4fr;
-  height: 100vh;
-  content-align: center middle;
-}
-#package_filter > ContentSwitcher {
-  height: 100%;
-}
-#package_filter > ContentSwitcher > Input {
-  height: 3;
-}
-.clear_css {
-  margin: 0 0 0 0;
-  padding: 0 0 0 0;
-  border: none;
-}
 
-#customer_info,
-#destination_info {
-  height: auto;
-}
 .half_screen {
   width: 1fr;
 }
@@ -84,24 +26,22 @@ Input {
 Input.half_screen {
   width: 1fr;
 }
-#content_switcher > .home {
-  content-align: center middle;
+
+TabbedContent {
+  border: solid lightskyblue;
   height: 100%;
-  width: 100%;
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
 }
 
-.box {
+ContentSwitcher {
+  border: solid lightcoral;
   height: 100%;
-  /* border: solid white; */
-}
-ListView {
-  /* width: 100%;
-  height: 100%; */
-  display: block;
 }
 
-Label {
-  padding: 0 0;
+TabPane {
+  border: solid greenyellow;
+  height: 100%;
 }
 Header {
   dock: top;
@@ -119,32 +59,36 @@ Footer {
   background: blue;
   color: white;
 }
-.package_labels {
+/* .package_labels {
   content-align: left middle;
   margin: 1;
   width: 1fr;
-}
+} */
 .update_package_select {
   width: 3fr;
 }
+
 #update_package {
   content-align: center middle;
   width: 50%;
   height: 50%;
 }
 
-#dialog {
-  grid-size: 2;
-  grid-gutter: 1 2;
-  grid-rows: 1fr 3;
-  padding: 0 1;
-  width: 60;
-  height: 11;
+BSOD {
+  align: center middle;
+  background: blue;
+  color: white;
 }
 
-#question {
-  column-span: 2;
-  height: 1fr;
-  width: 1fr;
-  content-align: center middle;
+BSOD > Static {
+  width: 70;
+}
+
+#title {
+  content-align-horizontal: center;
+  text-style: reverse;
+}
+
+#any-key {
+  content-align-horizontal: center;
 }
