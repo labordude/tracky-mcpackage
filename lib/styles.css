@@ -55,13 +55,18 @@ Input.half_screen {
 .center {
   content-align: center middle;
 }
-
+.max_width {
+  width: 100%;
+}
 TabbedContent,
 ContentSwitcher,
 TabPane {
   height: 100%;
   margin: 0 0 0 0;
   padding: 0 0 0 0;
+}
+TabPane {
+  border: pink solid;
 }
 /* 
 ContentSwitcher {

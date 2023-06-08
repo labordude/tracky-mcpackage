@@ -189,11 +189,25 @@ class Home(Widget):
 
     def compose(self) -> ComposeResult:
         with Grid(classes="grid_container"):
-            yield Label("hello", classes="two instructions")
+            yield Label("Please login", classes="two center max_width")
             # yield Markdown(EXAMPLE_MARKDOWN)
             drivers = [driver for driver in all_drivers()]
             for driver in drivers:
-                yield Button(f"{driver.name}")
+                yield Button(
+                    f"{driver.name}",
+                    name=f"driver_{driver.id}",
+                    id=f"driver_{driver.id}",
+                )
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        current_driver = int(event.button.id.split("_")[1])
+        print(current_driver)
+        self.app.query_one(ShowMyPackages.CreateTable).remove()
+        self.app.query_one(ShowMyPackages).mount(ShowMyPackages.CreateTable())
+        self.app.query_one(
+            "#main_content", TabbedContent
+        ).active = "my_packages"
+        pass
 
     def on_select_changed(self, event: Select.Changed) -> None:
         # current_driver = session.get(
@@ -457,19 +471,36 @@ class AddPackage(Widget):
 
 class ShowMyPackages(Widget):
     def compose(self) -> ComposeResult:
-        yield DataTable(id="my_packages")
+        yield Label(str(current_driver))
+        yield self.CreateTable()
 
-    def on_mount(self) -> None:
-        packages = [package for package in my_packages(current_driver)]
+    # def on_mount(self) -> None:
+    #     packages = [package for package in my_packages(current_driver)]
 
-        table = self.query_one("#my_packages", DataTable)
-        table.cursor_type = "row"
-        table.zebra_stripes = True
-        table.add_columns("id", "customer", "destination")
-        for package in packages:
-            table.add_row(
-                package.id, package.customer.name, package.destination.name
-            )
+    #     table = self.query_one("#my_packages", DataTable)
+    #     table.cursor_type = "row"
+    #     table.zebra_stripes = True
+    #     table.add_columns("id", "customer", "destination")
+    #     for package in packages:
+    #         table.add_row(
+    #             package.id, package.customer.name, package.destination.name
+    #         )
+
+    class CreateTable(Widget):
+        def compose(self) -> ComposeResult:
+            yield DataTable(id="my_packages")
+
+        def on_mount(self) -> None:
+            packages = [package for package in my_packages(current_driver)]
+
+            table = self.query_one("#my_packages", DataTable)
+            table.cursor_type = "row"
+            table.zebra_stripes = True
+            table.add_columns("id", "customer", "destination")
+            for package in packages:
+                table.add_row(
+                    package.id, package.customer.name, package.destination.name
+                )
 
     # def key_c(self):
     #     table = self.query_one("#my_packages", DataTable)
