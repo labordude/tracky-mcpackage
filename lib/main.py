@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import logging
 import random
-
-# import matplotlib.pyplot as plt
 from textual import on, events
 from textual.app import App, ComposeResult, RenderResult
 from textual.color import Color
@@ -71,6 +69,10 @@ from helpers import (
     single_package,
     all_statuses,
     update_package,
+    single_customer,
+    single_destination,
+    update_customer,
+    update_destination,
 )
 
 logging.basicConfig(
@@ -178,34 +180,37 @@ EXAMPLE_MARKDOWN = """\
 
 
 class Home(Widget):
-    # def compose(self) -> ComposeResult:
-    #     driver = session.get(Driver, current_driver)
-    #     yield Static(self.tree)
-    #     yield Label("Choose your login:")
-    #     yield Select(
-    #         options=((driver.name, driver.id) for driver in all_drivers()),
-    #         id="driver_login",
-    #         prompt=driver.name,
-    #         value=driver.id,
-    #     )
+    new_driver = current_driver
 
     def compose(self) -> ComposeResult:
-        with Grid(classes="grid_container"):
-            yield Label("Please login", classes="two center max_width")
-            # yield Markdown(EXAMPLE_MARKDOWN)
-            drivers = [driver for driver in all_drivers()]
-            for driver in drivers:
-                yield Button(
-                    f"{driver.name}",
-                    name=f"driver_{driver.id}",
-                    id=f"driver_{driver.id}",
-                )
+        driver = session.get(Driver, current_driver)
+        yield Label("Choose your login:")
+        yield Select(
+            options=((driver.name, driver.id) for driver in all_drivers()),
+            id="driver_login",
+            prompt=driver.name,
+            value=driver.id,
+        )
+
+    # def compose(self) -> ComposeResult:
+    #     with Grid(classes="grid_container"):
+    #         yield Label("Please login", classes="two center max_width")
+    #         # yield Markdown(EXAMPLE_MARKDOWN)
+    #         drivers = [driver for driver in all_drivers()]
+    #         for driver in drivers:
+    #             yield Button(
+    #                 f"{driver.name}",
+    #                 name=f"driver_{driver.id}",
+    #                 id=f"driver_{driver.id}",
+    #             )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         current_driver = int(event.button.id.split("_")[1])
         print(current_driver)
-        self.app.query_one(ShowMyPackages.CreateTable).remove()
-        self.app.query_one(ShowMyPackages).mount(ShowMyPackages.CreateTable())
+        self.app.query_one(self.ShowMyPackages.CreateTable).remove()
+        self.app.query_one(self.ShowMyPackages).mount(
+            ShowMyPackages.CreateTable()
+        )
         self.app.query_one(
             "#main_content", TabbedContent
         ).active = "my_packages"
@@ -215,9 +220,58 @@ class Home(Widget):
         # current_driver = session.get(
         #     Driver, self.query_one("#driver_login").value
         # )
-        new_driver = self.query_one("#driver_login").value
-        current_driver = session.get(Driver, new_driver)
+        self.new_driver = self.query_one("#driver_login").value
+        current_driver = session.get(Driver, self.new_driver)
+        try:
+            self.query_one("#package_widget").remove()
+        except Exception:
+            print("No Matches")
+        self.mount(self.ShowMyPackages(id="package_widget"))
         # self.query_one(CurrentDriver).name = current_driver.name
+
+    class ShowMyPackages(Widget):
+        def compose(self) -> ComposeResult:
+            yield Label(str(self.parent.new_driver))
+            yield DataTable(id="my_packages")
+
+        def on_mount(self) -> None:
+            packages = [
+                package for package in my_packages(self.parent.new_driver)
+            ]
+
+            table = self.query_one("#my_packages", DataTable)
+            table.cursor_type = "row"
+            table.zebra_stripes = True
+            table.add_columns("id", "status", "customer", "destination")
+            for package in packages:
+                table.add_row(
+                    package.id,
+                    package.status.name,
+                    package.customer.name,
+                    package.destination.name,
+                )
+
+        # class CreateTable(Widget):
+        #     def compose(self) -> ComposeResult:
+        #         yield DataTable(id="my_packages")
+
+        #     def on_mount(self) -> None:
+        #         packages = [package for package in my_packages(current_driver)]
+
+        #         table = self.query_one("#my_packages", DataTable)
+        #         table.cursor_type = "row"
+        #         table.zebra_stripes = True
+        #         table.add_columns("id", "customer", "destination")
+        #         for package in packages:
+        #             table.add_row(
+        #                 package.id,
+        #                 package.customer.name,
+        #                 package.destination.name,
+        #             )
+
+        # def key_c(self):
+        #     table = self.query_one("#my_packages", DataTable)
+        #     table.cursor_type = "row"
 
 
 class CustomerInfo(Widget):
@@ -467,42 +521,42 @@ class AddPackage(Widget):
         )
 
 
-class ShowMyPackages(Widget):
-    def compose(self) -> ComposeResult:
-        yield Label(str(current_driver))
-        yield self.CreateTable()
+# class ShowMyPackages(Widget):
+#     def compose(self) -> ComposeResult:
+#         yield Label(str(current_driver))
+#         yield self.CreateTable()
 
-    # def on_mount(self) -> None:
-    #     packages = [package for package in my_packages(current_driver)]
+#     def on_mount(self) -> None:
+#         packages = [package for package in my_packages(current_driver)]
 
-    #     table = self.query_one("#my_packages", DataTable)
-    #     table.cursor_type = "row"
-    #     table.zebra_stripes = True
-    #     table.add_columns("id", "customer", "destination")
-    #     for package in packages:
-    #         table.add_row(
-    #             package.id, package.customer.name, package.destination.name
-    #         )
+#         table = self.query_one("#my_packages", DataTable)
+#         table.cursor_type = "row"
+#         table.zebra_stripes = True
+#         table.add_columns("id", "customer", "destination")
+#         for package in packages:
+#             table.add_row(
+#                 package.id, package.customer.name, package.destination.name
+#             )
 
-    class CreateTable(Widget):
-        def compose(self) -> ComposeResult:
-            yield DataTable(id="my_packages")
+#     class CreateTable(Widget):
+#         def compose(self) -> ComposeResult:
+#             yield DataTable(id="my_packages")
 
-        def on_mount(self) -> None:
-            packages = [package for package in my_packages(current_driver)]
+#         def on_mount(self) -> None:
+#             packages = [package for package in my_packages(current_driver)]
 
-            table = self.query_one("#my_packages", DataTable)
-            table.cursor_type = "row"
-            table.zebra_stripes = True
-            table.add_columns("id", "customer", "destination")
-            for package in packages:
-                table.add_row(
-                    package.id, package.customer.name, package.destination.name
-                )
+#             table = self.query_one("#my_packages", DataTable)
+#             table.cursor_type = "row"
+#             table.zebra_stripes = True
+#             table.add_columns("id", "customer", "destination")
+#             for package in packages:
+#                 table.add_row(
+#                     package.id, package.customer.name, package.destination.name
+#                 )
 
-    # def key_c(self):
-    #     table = self.query_one("#my_packages", DataTable)
-    #     table.cursor_type = "row"
+#     # def key_c(self):
+#     #     table = self.query_one("#my_packages", DataTable)
+#     #     table.cursor_type = "row"
 
 
 class UpdatePackageLabel(Widget):
@@ -827,14 +881,6 @@ class ShowPackagesNew2(Widget):
         self.mount(self.UpdatePackage(row_data))
         table.remove()
 
-        # print(row_data)
-        # app.push_screen(self.UpdatePackage(row_data))
-
-    # def on_button_pressed(self, event: Button.Pressed) -> None:
-    #     print(self.screen.tree)
-    #     self.screen.query_one(
-    #         "#content_switcher", ContentSwitcher
-    #     ).current = event.button.id
     def update_filter(self) -> None:
         packages = [
             package
@@ -858,48 +904,6 @@ class ShowPackagesNew2(Widget):
                 package.destination.name,
                 package.driver.name,
             )
-
-
-# class ShowPackagesNew(Widget):
-#     def compose(self) -> ComposeResult:
-#         with Horizontal(id="buttons"):
-#             yield Button("All", id="all_packages")
-#             yield Button("In Transit", id="in_transit2")
-#             yield Button("Lost", id="packages_lost")
-
-#         with ContentSwitcher(initial="all_packages", id="package_filter"):
-#             with VerticalScroll(id="all_packages"):
-#                 yield DataTable(id="packages")
-#             with VerticalScroll(id="in_transit2"):
-#                 yield ShowPackagesInTransit()
-#             with VerticalScroll(id="packages_lost"):
-#                 yield ShowLostAndFound()
-
-#     def on_mount(self) -> None:
-#         packages = [package for package in all_packages()]
-
-#         table = self.query_one("#packages", DataTable)
-#         table.cursor_type = "row"
-#         table.zebra_stripes = True
-#         table.add_columns("id", "status", "customer", "destination")
-#         for package in packages:
-#             table.add_row(
-#                 package.id,
-#                 package.status.name,
-#                 package.customer.name,
-#                 package.destination.name,
-#             )
-
-#     def on_button_pressed(self, event: Button.Pressed) -> None:
-#         print(self.screen.tree)
-#         self.screen.query_one(
-#             "#package_filter", ContentSwitcher
-#         ).current = event.button.id
-
-#     # 1	In Transit
-#     # 2	Delivered
-#     # 3	Waiting to be picked up
-#     # 4	Lost
 
 
 class BSOD(Screen):
@@ -1091,27 +1095,138 @@ class ShowCustomers(Widget):
 
     def update_filter(self) -> None:
         customers = [customer for customer in search_by_customer(self.search)]
-        table = self.query_one("#customers", DataTable)
-        table.clear(columns=True)
-        table.cursor_type = "row"
-        table.zebra_stripes = True
-        table.add_columns("id", "name", "address")
-        for customer in customers:
-            table.add_row(customer.id, customer.name, customer.address)
+        self.log(self.tree)
+        try:
+            table = self.query_one("#customers", DataTable)
+            table.clear(columns=True)
+            table.cursor_type = "row"
+            table.zebra_stripes = True
+            table.add_columns("id", "name", "address")
+            for customer in customers:
+                table.add_row(customer.id, customer.name, customer.address)
+        except Exception:
+            print("Whoops")
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        customers = [customer for customer in search_by_customer(self.search)]
-        table = self.query_one("#customers", DataTable)
-        table.clear(columns=True)
-        table.cursor_type = "row"
-        table.zebra_stripes = True
-        table.add_columns("id", "name", "address")
-        for customer in customers:
-            table.add_row(customer.id, customer.name, customer.address)
+    # def on_button_pressed(self, event: Button.Pressed) -> None:
+    #     customers = [customer for customer in search_by_customer(self.search)]
+    #     table = self.query_one("#customers", DataTable)
+    #     table.clear(columns=True)
+    #     table.cursor_type = "row"
+    #     table.zebra_stripes = True
+    #     table.add_columns("id", "name", "address")
+    #     for customer in customers:
+    #         table.add_row(customer.id, customer.name, customer.address)
 
     def key_c(self):
         table = self.query_one("#customers", DataTable)
         table.cursor_type = "row"
+
+    class UpdateCustomer(Widget):
+        BINDINGS = [("escape", "app.pop_screen", "Pop screen")]
+        """update a package from this screen"""
+
+        def __init__(self, row: list) -> None:
+            super().__init__()
+            self.customer_id = row[0]
+            self.customer_name = row[1]
+            self.customer_address = row[2]
+            self.row = row
+
+        def compose(self) -> ComposeResult:
+            customer = single_customer(self.customer_id).one()
+
+            with Horizontal():
+                yield Label(
+                    f"Customer: {customer.name}",
+                    classes="package_labels",
+                )
+
+                yield Input(
+                    id="update_customer_name",
+                    placeholder=customer.name,
+                    classes="update_package_select",
+                    value=customer.name,
+                )
+            with Horizontal():
+                yield Label(
+                    f"Customer: {customer.address}",
+                    classes="package_labels",
+                )
+                yield Input(
+                    id="update_customer_address",
+                    classes="update_package_select",
+                    placeholder=customer.address,
+                    value=customer.address,
+                )
+
+            with Horizontal():
+                yield Button(
+                    "Update",
+                    classes="half_screen",
+                    variant="primary",
+                    id="submit_update",
+                )
+                yield Button(
+                    "Quit",
+                    classes="half_screen",
+                    variant="default",
+                    id="quit_update",
+                )
+
+        def on_input_changed(self, event: Input.Changed) -> None:
+            self.customer_name = self.query_one("#update_customer_name").value
+            self.customer_address = self.query_one(
+                "#update_customer_address"
+            ).value
+
+        def on_button_pressed(self, event: Button.Pressed) -> None:
+            if event.button.id == "submit_update":
+                self.customer_name = self.query_one(
+                    "#update_customer_name"
+                ).value
+                self.customer_address = self.query_one(
+                    "#update_customer_address"
+                ).value
+                print(
+                    f"{self.customer_id}, {self.customer_name}, {self.customer_address}"
+                )
+                # new_destination(name, address, address_x, address_y)
+                update_customer(
+                    customer_id=self.customer_id,
+                    customer_name=self.customer_name,
+                    customer_address=self.customer_address,
+                )
+
+            self.parent.mount(self.parent.CreateCustomerTable())
+            self.remove()
+
+    class CreateCustomerTable(Widget):
+        def compose(self) -> ComposeResult:
+            yield DataTable(id="customers")
+
+        def on_mount(self) -> None:
+            customers = [customer for customer in all_customers()]
+            table = self.query_one("#customers", DataTable)
+            table.clear(columns=True)
+            table.cursor_type = "row"
+            table.zebra_stripes = True
+            table.add_columns("id", "name", "address")
+            for customer in customers:
+                table.add_row(customer.id, customer.name, customer.address)
+
+        def on_data_table_row_selected(
+            self, event: DataTable.RowSelected
+        ) -> None:
+            table = self.query_one("#customers", DataTable)
+            row_data = table.get_row(row_key=event.row_key)
+            self.parent.mount(self.parent.UpdateCustomer(row_data))
+            self.remove()
+
+    def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
+        table = self.query_one("#customers", DataTable)
+        row_data = table.get_row(row_key=event.row_key)
+        self.mount(self.UpdateCustomer(row_data))
+        table.remove()
 
 
 class ShowDestinations(Widget):
@@ -1189,19 +1304,19 @@ class TrackyMcPackage(App):
         yield Footer()
         with TabbedContent(
             "Home",
-            "My day",
+            # "My day",
             "Packages",
             "Customers",
             "Destinations",
-            "Best Path",
+            # "Best Path",
             id="main_content",
         ):
             with TabPane("Home", id="home"):
                 yield Home()
             # with TabPane("My day", id="my_packages"):
             #     yield ShowMyPackages()
-                # yield Input(placeholder="Search...", id="search_all_packages")
-                # yield DataTable(id="packages", classes="clear_css")
+            # yield Input(placeholder="Search...", id="search_all_packages")
+            # yield DataTable(id="packages", classes="clear_css")
             with TabPane("Packages"):
                 with TabbedContent():
                     with TabPane("All", id="all_packages"):
@@ -1212,20 +1327,20 @@ class TrackyMcPackage(App):
                         yield ShowLostAndFound()
                     with TabPane("Add new package", id="add_new_package"):
                         yield AddPackage()
-            with TabPane("Customers", id="customers"):
+            with TabPane("Customers"):
                 with TabbedContent():
-                    with TabPane("Customers"):
+                    with TabPane("Customers", id="all_customers"):
                         yield ShowCustomers()
                     with TabPane("Add new customer"):
                         yield AddCustomer(classes="center")
-            with TabPane("Destinations", id="destinations"):
+            with TabPane("Destinations"):
                 with TabbedContent():
-                    with TabPane("Destinations"):
+                    with TabPane("Destinations", id="all_destinations"):
                         yield ShowDestinations()
                     with TabPane("Add new destination"):
                         yield AddDestination()
-            with TabPane("BestPath", id="best_path"):
-                yield Label("Coming Soon")
+            # with TabPane("BestPath", id="best_path"):
+            #     yield Label("Coming Soon")
         # with Vertical(id="menu"):
         #     yield Menu(classes="box", id="sidebar")
         # with ContentSwitcher(

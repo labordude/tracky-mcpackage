@@ -47,11 +47,19 @@ with Session(engine) as session:
     def all_customers():
         return session.scalars(select(Customer))
 
+    def single_customer(search):
+        return session.scalars(select(Customer).where(Customer.id == search))
+
     def all_statuses():
         return session.scalars(select(Status))
 
     def all_destinations():
         return session.scalars(select(Destination))
+
+    def single_destination(search):
+        return session.scalars(select(Destination)).where(
+            Destination.id == search
+        )
 
     def search_by_customer(search):
         return session.scalars(
@@ -120,19 +128,6 @@ with Session(engine) as session:
             print(
                 f"{package.id} | {package.destination.name}, {package.destination.address}"
             )
-        # print(driver)
-        # packages = (
-        #     select(Package, Status)
-        #     .join(Package.driver)
-        #     .join(Package.status)
-        #     .where(Package.driver == driver)
-        #     .order_by(Status.id, Package.id)
-        # )
-
-        # for package in session.scalars(packages):
-        #     print(
-        #         f"{package.driver.name}\t|{package.id}\t|{package.status.name}"
-        #     )
 
     # [X] change the status on a package
     def update_package(
@@ -167,6 +162,22 @@ with Session(engine) as session:
         session.add(new_customer)
         session.commit()
 
+    def update_customer(customer_id, customer_name, customer_address):
+        statement = (
+            update(Customer)
+            .where(Customer.id == customer_id)
+            .values(
+                {
+                    Customer.name: customer_name,
+                    Customer.address: customer_address,
+                }
+            )
+            .returning(Customer)
+        )
+        result = session.execute(statement).first()
+        # you have to commit the updates...
+        session.commit()
+
     # [ ] create a new destination in the system
     def new_destination(name, address, address_x, address_y):
         new_destination = Destination(
@@ -177,7 +188,23 @@ with Session(engine) as session:
         session.add(new_destination)
         session.commit()
 
-    # [ ] search for package, destination, or customer
+    def update_destination(
+        destination_id, destination_name, destination_address
+    ):
+        statement = (
+            update(Destination)
+            .where(Destination.id == destination_id)
+            .values(
+                {
+                    Destination.name: destination_name,
+                    Destination.address: destination_address,
+                }
+            )
+            .returning(Destination)
+        )
+
+        # you have to commit the updates...
+        session.commit()
 
     # [X] create a new package to be delivered
     def new_package(status_id, customer_id, destination_id, driver_id):
@@ -203,15 +230,3 @@ with Session(engine) as session:
         destination = session.get(Destination, destination_id)
         for package in destination.destination_packages:
             print(f"{package.id} | {package.customer.name}")
-        # customer_packages = (
-        #     select(Package, Customer, Status, Destination)
-        #     .join(Package.customer)
-        #     .join(Package.status)
-        #     .join(Package.destination)
-        #     .where(Package.customer == customer)
-        #     .order_by(Destination.name)
-        # )
-        # result = session.scalars(customer_packages).all()
-        # print(f"{customer.name}")
-        # for row in result:
-        #     print(f"{row.id}\t|{row.destination.name}\t|{row.status.name}")
