@@ -229,7 +229,8 @@ class CustomerInfo(Widget):
 
 
 class DisplayGrid(Widget):
-    pass
+    def compose(self) -> None:
+        pass
 
 
 class AddCustomer(Widget):
