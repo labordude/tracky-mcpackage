@@ -1351,54 +1351,139 @@ class BestPath(Widget):
     deliveries = []
 
     def compose(self) -> ComposeResult:
-        yield Button("Calculate best path", id="btn_best_path")
-        yield DataTable(id="destination_stops")
+        current_driver = app.current_driver
+        driver = session.get(Driver, current_driver)
+        yield Select(
+            options=((driver.name, driver.id) for driver in all_drivers()),
+            id="driver_best_path",
+            prompt=driver.name,
+            value=driver.id,
+        )
 
-    def on_mount(self) -> None:
-        packages = [package for package in get_my_packages(3)]
-        packages = packages[0:10]
+    def on_select_changed(self, event: Select.Changed) -> None:
+        self.new_driver = self.query_one("#driver_best_path").value
+        current_driver = session.get(Driver, self.new_driver)
+        try:
+            self.query_one("#best_path_widget").remove()
+        except Exception:
+            print("No Matches")
+        self.mount(self.ShowPackages(id="best_path_widget"))
+        # packages = [package for package in get_my_packages(event.select)]
+        # packages = packages[0:10]
 
-        for i in range(10):
-            self.deliveries.append(
-                [
-                    packages[i].destination.address_coordinates.x,
-                    packages[i].destination.address_coordinates.y,
-                ]
+        # for i in range(10):
+        #     self.deliveries.append(
+        #         [
+        #             packages[i].destination.address_coordinates.x,
+        #             packages[i].destination.address_coordinates.y,
+        #         ]
+        #     )
+        # table = self.query_one("#destination_stops", DataTable)
+        # table.cursor_type = "row"
+        # table.zebra_stripes = True
+        # table.add_columns(
+        #     "index", "id", "customer", "destination", "coordinates"
+        # )
+        # for index, package in enumerate(packages):
+        #     table.add_row(
+        #         index,
+        #         package.id,
+        #         package.customer.name,
+        #         package.destination.name,
+        #         (
+        #             package.destination.address_coordinates.x,
+        #             package.destination.address_coordinates.y,
+        #         ),
+        #     )
+        # try:
+        #     self.query_one("#destination_stops").remove()
+        # except Exception:
+        #     print("no table there yet")
+
+    class ShowPackages(Widget):
+        deliveries = []
+
+        def compose(self) -> ComposeResult:
+            yield Button("Calculate best path", id="btn_best_path")
+            yield DataTable(id="destination_stops", classes="need_space")
+
+        def on_mount(self) -> None:
+            packages = [
+                package for package in get_my_packages(self.parent.new_driver)
+            ]
+
+            length = 10 if len(packages) >= 10 else len(packages)
+            packages = packages[0:length]
+            for i in range(length):
+                self.deliveries.append(
+                    [
+                        packages[i].destination.address_coordinates.x,
+                        packages[i].destination.address_coordinates.y,
+                    ]
+                )
+            table = self.query_one("#destination_stops", DataTable)
+            table.cursor_type = "row"
+            table.zebra_stripes = True
+            table.add_columns(
+                "index", "id", "customer", "destination", "coordinates"
             )
-        table = self.query_one("#destination_stops", DataTable)
-        table.cursor_type = "row"
-        table.zebra_stripes = True
-        table.add_columns("id", "coordinate")
-        for package in packages:
-            table.add_row(
-                package.id,
-                (
-                    package.destination.address_coordinates.x,
-                    package.destination.address_coordinates.y,
-                ),
+            for index, package in enumerate(packages):
+                table.add_row(
+                    index,
+                    package.id,
+                    package.customer.name,
+                    package.destination.name,
+                    (
+                        package.destination.address_coordinates.x,
+                        package.destination.address_coordinates.y,
+                    ),
+                )
+
+        async def on_button_pressed(self, event: Button.Pressed) -> None:
+            packages = [
+                package for package in get_my_packages(self.parent.new_driver)
+            ]
+            length = 10 if len(packages) >= 10 else len(packages)
+            packages = packages[0:length]
+            fitness_destinations = mlrose.TravellingSales(
+                coords=self.deliveries
             )
 
-    async def on_button_pressed(self, event: Button.Pressed) -> None:
-        fitness_destinations = mlrose.TravellingSales(coords=self.deliveries)
+            # optimization definition
+            problem_fit = mlrose.TSPOpt(
+                length=len(self.deliveries),
+                fitness_fn=fitness_destinations,
+                maximize=False,
+            )
+            # generic geneTic algorithm
+            best_state_1, best_fitness_1 = mlrose.genetic_alg(
+                problem_fit, random_state=2
+            )
 
-        # optimization definition
-        problem_fit = mlrose.TSPOpt(
-            length=len(self.deliveries),
-            fitness_fn=fitness_destinations,
-            maximize=False,
-        )
-        # generic geneTic algorithm
-        best_state_1, best_fitness_1 = mlrose.genetic_alg(
-            problem_fit, random_state=2
-        )
+            # potentially optimized genetic algorithm
+            best_state_2, best_fitness_2 = mlrose.genetic_alg(
+                problem_fit,
+                mutation_prob=0.2,
+                max_attempts=100,
+                random_state=2,
+            )
+            await self.mount(
+                Label(f"the best order for deliveries is {best_state_1}")
+            )
+            try:
+                output = ""
+                for stop in best_state_1:
+                    output += f"{packages[stop].destination.name},{packages[stop].destination.address}\n"
+                await self.mount(Label(output))
+                self.deliveries.clear()
+            except Exception as err:
+                self.mount(Label(f"An error has occurred: {err}"))
+                self.deliveries.clear()
 
-        # potentially optimized genetic algorithm
-        best_state_2, best_fitness_2 = mlrose.genetic_alg(
-            problem_fit, mutation_prob=0.2, max_attempts=100, random_state=2
-        )
-        await self.mount(
-            Label(f"the best order for deliveries is {best_state_1}")
-        )
+            # try:
+            #     self.query_one("#destination_stops").remove()
+            # except Exception:
+            #     print("no table there yet")
 
 
 # home function
@@ -1525,11 +1610,15 @@ class Welcome(Screen[int]):
     # drivers_list.insert(0, ("Select your name", 0))
 
     def compose(self) -> ComposeResult:
-        yield Static("TrackyMcPackage ", id="title")
-        yield Markdown(self.WELCOME_TEXT)
-        yield Button("Let's party", classes="btn_welcome")
+        with Grid(classes="welcome_grid"):
+            yield Static("TrackyMcPackage ", id="title", classes="two")
+            yield Markdown(self.WELCOME_TEXT, classes="two full_width")
+            yield Button("Let's party", classes="btn_welcome")
+            yield Button("Nevermind", classes="btn_welcome", id="btn_quit")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "btn_quit":
+            app.exit()
         self.dismiss()
 
 

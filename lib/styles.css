@@ -42,6 +42,7 @@ Button {
   width: 3fr;
 }
 Welcome {
+  height: 25%;
   align: center middle;
   content-align: center middle;
 }
@@ -54,6 +55,25 @@ Welcome {
   align: center middle;
 }
 
+.welcome_grid {
+  height: 25%;
+  width: 50%;
+  align: center middle;
+  content-align: center middle;
+  layout: grid;
+  grid-size: 2;
+  grid-gutter: 1;
+}
+
+/* .welcome_grid > Button {
+  width: 50%;
+} */
+.need_space {
+  height: 35%;
+}
+.btn_best_path {
+  width: 25%;
+}
 .two {
   column-span: 2;
   color: white;
@@ -145,8 +165,11 @@ BSOD > Static {
 #title {
   content-align-horizontal: center;
   text-style: reverse;
+  width: 100%;
 }
-
+.full_width {
+  width: 100%;
+}
 #any-key {
   content-align-horizontal: center;
 }
