@@ -13,7 +13,7 @@ class Point:
     y: int
 
 
-engine = create_engine("sqlite:///fpds.db", echo=True)
+engine = create_engine("sqlite:///fpds.db", echo=False)
 with Session(engine) as session:
     # [X] see a list of all packages in the system
 
@@ -215,7 +215,7 @@ with Session(engine) as session:
             )
             .returning(Destination)
         )
-        print(statement)
+        result = session.execute(statement).first()
         # you have to commit the updates...
         session.commit()
 
