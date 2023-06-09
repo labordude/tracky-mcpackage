@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, DateTime
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -6,6 +6,7 @@ from sqlalchemy.orm import (
     composite,
     relationship,
 )
+from sqlalchemy.sql import func
 from typing import List
 import dataclasses
 
@@ -43,6 +44,9 @@ class Package(Base):
     __tablename__ = "packages"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    delivery_time: Mapped[DateTime] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     status_id = mapped_column(ForeignKey("statuses.id"))
     status: Mapped["Status"] = relationship(back_populates="package_statuses")
     customer_id = mapped_column(ForeignKey("customers.id"))

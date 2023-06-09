@@ -2,10 +2,11 @@
 import ipdb
 from faker import Faker
 import random
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select, update
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 from models import Customer, Driver, Destination, Package, Status
-
+from helpers import get_my_packages
 import dataclasses
 
 
@@ -97,5 +98,27 @@ if __name__ == "__main__":
             session.commit()
             packages.append(package)
         session.commit()
-        # ipdb.set_trace()
+
+        def packages_by_status(status_id):
+            return session.scalars(
+                select(Package, Status)
+                .join(Package.status)
+                .where(Status.id == status_id)
+            )
+
+        def mark_package_delivered(package_id):
+            statement = (
+                update(Package)
+                .where(Package.id == package_id)
+                .values({Package.delivery_time: func.now()})
+            ).returning(Package)
+
+            result = session.execute(statement).first()
+            session.commit()
+
+        delivered = [package for package in packages_by_status(2)]
+        for delivery in delivered:
+            mark_package_delivered(delivery.id)
+
+        ipdb.set_trace()
         session.close()

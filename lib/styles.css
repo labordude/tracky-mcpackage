@@ -25,20 +25,35 @@ TabPane {
   padding: 0 0 0 0;
   margin: 0 0 0 0;
 }
+.btn_welcome {
+  height: 5;
+  content-align: center middle;
+  align: center middle;
+  background: lightskyblue;
+  color: black;
+}
 Button {
-  width: 95%;
+  width: 100%;
   border: none;
+  content-align: center middle;
+  align: center middle;
 }
 .search_bar {
   width: 3fr;
+}
+Welcome {
+  align: center middle;
+  content-align: center middle;
 }
 .grid_container {
   layout: grid;
   grid-size: 2;
   grid-gutter: 1;
-  margin: 0;
+
   height: 75%;
+  align: center middle;
 }
+
 .two {
   column-span: 2;
   color: white;
@@ -92,10 +107,15 @@ Header {
 
 Footer {
   dock: bottom;
-  height: 0;
+  height: 3;
   content-align: center middle;
   background: blue;
   color: white;
+}
+#btn_logout {
+  width: 25%;
+  content-align: center middle;
+  dock: right;
 }
 .package_labels {
   content-align: left middle;

@@ -1,8 +1,18 @@
 #!/usr/bin/env python3
+import six
+import sys
+
+sys.modules["sklearn.externals.six"] = six
+import mlrose
+import numpy as np
 import logging
 import random
+import datetime
+from dateutil import tz
+from dateutil.relativedelta import *
 from textual import on, events
 from textual.app import App, ComposeResult, RenderResult
+from textual.binding import Binding
 from textual.color import Color
 from textual.events import Key, Event
 from textual.logging import TextualHandler
@@ -15,6 +25,7 @@ from textual.containers import (
     ScrollableContainer,
     VerticalScroll,
 )
+from terminaltables import AsciiTable
 from textual.widgets import (
     Button,
     Header,
@@ -35,11 +46,12 @@ from itertools import cycle
 from textual.reactive import reactive, Reactive
 from textual.strip import Strip
 from textual.screen import Screen, ModalScreen
+from rich import box
 from rich.align import Align
-from rich.box import DOUBLE
+from rich.box import DOUBLE, Box
 from rich.segment import Segment
 from rich.panel import Panel
-from rich.console import RenderableType, group
+from rich.console import RenderableType, group, Console
 from rich.style import Style
 from rich.table import Table
 from rich.text import Text
@@ -73,6 +85,7 @@ from helpers import (
     single_destination,
     update_customer,
     update_destination,
+    get_my_packages,
 )
 
 logging.basicConfig(
@@ -345,6 +358,7 @@ class AddCustomer(Widget):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         # new_destination(name, address, address_x, address_y)
+        self.app.query_one(ShowCustomers).remove()
         if event.button.id == "btn_submit_customer":
             new_customer(
                 name=self.query_one(CustomerInfo).name,
@@ -354,8 +368,10 @@ class AddCustomer(Widget):
             )
         self.query_one("#new_customer_name").value = ""
         self.query_one("#new_customer_address").value = ""
-        self.query_one("#new_customer_coord_x").value = ""
-        self.query_one("#new_customer_coord_y").value = ""
+        self.query_one("#new_customer_coordinates_x").value = ""
+        self.query_one("#new_customer_coordinates_y").value = ""
+
+        self.parent.parent.query_one("#all_customers").mount(ShowCustomers())
         self.app.query_one(
             "#customers_content", TabbedContent
         ).active = "all_customers"
@@ -603,6 +619,8 @@ class AddDestination(Widget):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         # new_destination(name, address, address_x, address_y)
+        self.app.query_one(ShowDestinations).remove()
+        self.log(self.parent.parent.tree)
         if event.button.id == "btn_submit_destination":
             new_destination(
                 name=self.query_one(DestinationInfo).name,
@@ -612,8 +630,11 @@ class AddDestination(Widget):
             )
         self.query_one("#new_destination_name").value = ""
         self.query_one("#new_destination_address").value = ""
-        self.query_one("#new_destination_coord_x").value = ""
-        self.query_one("#new_destination_coord_y").value = ""
+        self.query_one("#new_destination_coordinates_x").value = ""
+        self.query_one("#new_destination_coordinates_y").value = ""
+        self.parent.parent.query_one("#all_destinations").mount(
+            ShowDestinations()
+        )
         self.app.query_one(
             "#destinations_content", TabbedContent
         ).active = "all_destinations"
@@ -845,15 +866,36 @@ class ShowPackagesNew2(Widget):
         table = self.query_one("#packages", DataTable)
         table.cursor_type = "row"
         table.zebra_stripes = True
-        table.add_columns("id", "status", "customer", "destination", "driver")
+        table.add_columns(
+            "id",
+            "status",
+            "customer",
+            "destination",
+            "driver",
+            "delivery_time",
+        )
         for package in packages:
-            table.add_row(
-                package.id,
-                package.status.name,
-                package.customer.name,
-                package.destination.name,
-                package.driver.name,
-            )
+            if package.delivery_time is not None:
+                delta = relativedelta(hours=-5)
+                corrected_time = (package.delivery_time + delta).strftime(
+                    "%x %X"
+                )
+                table.add_row(
+                    package.id,
+                    package.status.name,
+                    package.customer.name,
+                    package.destination.name,
+                    package.driver.name,
+                    corrected_time,
+                )
+            else:
+                table.add_row(
+                    package.id,
+                    package.status.name,
+                    package.customer.name,
+                    package.destination.name,
+                    package.driver.name,
+                )
 
     def action_show_tab(self, tab: str) -> None:
         """Switch to a new tab."""
@@ -874,6 +916,7 @@ class ShowPackagesNew2(Widget):
             self.package_customer = row[2]
             self.package_destination = row[3]
             self.package_driver = row[4]
+            self.package_delivery_time = row[5]
             self.row = row
 
         def compose(self) -> ComposeResult:
@@ -1000,16 +1043,35 @@ class ShowPackagesNew2(Widget):
             table.cursor_type = "row"
             table.zebra_stripes = True
             table.add_columns(
-                "id", "status", "customer", "destination", "driver"
+                "id",
+                "status",
+                "customer",
+                "destination",
+                "driver",
+                "delivery_time",
             )
             for package in packages:
-                table.add_row(
-                    package.id,
-                    package.status.name,
-                    package.customer.name,
-                    package.destination.name,
-                    package.driver.name,
-                )
+                if package.delivery_time is not None:
+                    delta = relativedelta(hours=-5)
+                    corrected_time = (package.delivery_time + delta).strftime(
+                        "%x %X"
+                    )
+                    table.add_row(
+                        package.id,
+                        package.status.name,
+                        package.customer.name,
+                        package.destination.name,
+                        package.driver.name,
+                        corrected_time,
+                    )
+                else:
+                    table.add_row(
+                        package.id,
+                        package.status.name,
+                        package.customer.name,
+                        package.destination.name,
+                        package.driver.name,
+                    )
 
         def on_data_table_row_selected(
             self, event: DataTable.RowSelected
@@ -1041,16 +1103,35 @@ class ShowPackagesNew2(Widget):
             table.cursor_type = "row"
             table.zebra_stripes = True
             table.add_columns(
-                "id", "status", "customer", "destination", "driver"
+                "id",
+                "status",
+                "customer",
+                "destination",
+                "driver",
+                "delivery_time",
             )
             for package in packages:
-                table.add_row(
-                    package.id,
-                    package.status.name,
-                    package.customer.name,
-                    package.destination.name,
-                    package.driver.name,
-                )
+                if package.delivery_time is not None:
+                    delta = relativedelta(hours=-5)
+                    corrected_time = (package.delivery_time + delta).strftime(
+                        "%x %X"
+                    )
+                    table.add_row(
+                        package.id,
+                        package.status.name,
+                        package.customer.name,
+                        package.destination.name,
+                        package.driver.name,
+                        corrected_time,
+                    )
+                else:
+                    table.add_row(
+                        package.id,
+                        package.status.name,
+                        package.customer.name,
+                        package.destination.name,
+                        package.driver.name,
+                    )
         except Exception as err:
             self.log(self.parent.tree)
             print("package_filter_goes_BOOM", err)
@@ -1265,19 +1346,83 @@ class AddField(Widget):
 #         table.cursor_type = "row"
 
 
-# home function
-class Home(Widget):
-    new_driver = current_driver
+# get package delivery points
+class BestPath(Widget):
+    deliveries = []
 
     def compose(self) -> ComposeResult:
+        yield Button("Calculate best path", id="btn_best_path")
+        yield DataTable(id="destination_stops")
+
+    def on_mount(self) -> None:
+        packages = [package for package in get_my_packages(3)]
+        packages = packages[0:10]
+
+        for i in range(10):
+            self.deliveries.append(
+                [
+                    packages[i].destination.address_coordinates.x,
+                    packages[i].destination.address_coordinates.y,
+                ]
+            )
+        table = self.query_one("#destination_stops", DataTable)
+        table.cursor_type = "row"
+        table.zebra_stripes = True
+        table.add_columns("id", "coordinate")
+        for package in packages:
+            table.add_row(
+                package.id,
+                (
+                    package.destination.address_coordinates.x,
+                    package.destination.address_coordinates.y,
+                ),
+            )
+
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
+        fitness_destinations = mlrose.TravellingSales(coords=self.deliveries)
+
+        # optimization definition
+        problem_fit = mlrose.TSPOpt(
+            length=len(self.deliveries),
+            fitness_fn=fitness_destinations,
+            maximize=False,
+        )
+        # generic geneTic algorithm
+        best_state_1, best_fitness_1 = mlrose.genetic_alg(
+            problem_fit, random_state=2
+        )
+
+        # potentially optimized genetic algorithm
+        best_state_2, best_fitness_2 = mlrose.genetic_alg(
+            problem_fit, mutation_prob=0.2, max_attempts=100, random_state=2
+        )
+        await self.mount(
+            Label(f"the best order for deliveries is {best_state_1}")
+        )
+
+
+# home function
+class Home(Widget):
+    def compose(self) -> ComposeResult:
+        new_driver = self.app.current_driver
+
+        current_driver = app.current_driver
         driver = session.get(Driver, current_driver)
-        yield Label("Choose your login:")
+
+        yield Label("Welcome to work. Remember you're here forever.")
+        yield Label("Choose your login")
         yield Select(
             options=((driver.name, driver.id) for driver in all_drivers()),
             id="driver_login",
             prompt=driver.name,
             value=driver.id,
         )
+        # try:
+        #     self.query_one("#package_widget").remove()
+        # except Exception:
+        #     print("No Matches")
+
+        # self.mount(self.ShowMyPackages(id="package_widget"))
 
     # def compose(self) -> ComposeResult:
     #     with Grid(classes="grid_container"):
@@ -1361,16 +1506,47 @@ class Home(Widget):
         #     table.cursor_type = "row"
 
 
+class Footer(Widget):
+    def compose(self) -> ComposeResult:
+        yield Button("Logout", id="btn_logout")
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        app.exit()
+
+
+class Welcome(Screen[int]):
+    WELCOME_TEXT = """
+
+
+# TRACKYMCPACKAGE - WE'LL GET IT THERE...EVENTUALLY
+
+"""
+    # drivers_list = [(driver.name, driver.id) for driver in all_drivers()]
+    # drivers_list.insert(0, ("Select your name", 0))
+
+    def compose(self) -> ComposeResult:
+        yield Static("TrackyMcPackage ", id="title")
+        yield Markdown(self.WELCOME_TEXT)
+        yield Button("Let's party", classes="btn_welcome")
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        self.dismiss()
+
+
 # main app class
 class TrackyMcPackage(App):
     CSS_PATH = "styles.css"
     TITLE = "Tracky McPackage"
     SUB_TITLE = "We'll get it there...eventually"
-    current_driver = random.randint(1, 8)
-    SCREENS = {
-        "bsod": BSOD(),
-    }
-    BINDINGS = [("b", "push_screen('bsod')", "BSOD")]
+    current_driver = reactive(2)
+    SCREENS = {"bsod": BSOD(), "welcome": Welcome()}
+
+    BINDINGS = [
+        Binding("ctrl+c", "quit", "Quit", show=False, priority=True),
+        Binding("tab", "focus_next", "Focus Next", show=False),
+        Binding("shift+tab", "focus_previous", "Focus Previous", show=False),
+        Binding("b", "push_screen('bsod')", "egg"),
+    ]
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -1412,8 +1588,9 @@ class TrackyMcPackage(App):
                         yield ShowDestinations()
                     with TabPane("Add new destination"):
                         yield AddDestination()
-            # with TabPane("BestPath", id="best_path"):
-            #     yield Label("Coming Soon")
+            with TabPane("BestPath", id="best_path"):
+                # yield Label("Coming Soon")
+                yield BestPath()
         # with Vertical(id="menu"):
         #     yield Menu(classes="box", id="sidebar")
         # with ContentSwitcher(
@@ -1441,6 +1618,13 @@ class TrackyMcPackage(App):
         #     yield Button("Exit", id="exit_button")
 
     def on_mount(self) -> None:
+        def check_driver_login(driver) -> None:
+            print(driver)
+            if driver:
+                self.current_driver = driver
+                print(self.current_driver)
+
+        self.push_screen(Welcome(), check_driver_login)
         logging.debug("Logged via TextualHandler")
         self.log(self.tree)
 

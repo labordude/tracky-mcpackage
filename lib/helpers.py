@@ -2,6 +2,7 @@
 from models import Driver, Destination, Customer, Package, Status
 from sqlalchemy import create_engine, select, update, or_
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 import itertools
 import dataclasses
 
@@ -12,7 +13,7 @@ class Point:
     y: int
 
 
-engine = create_engine("sqlite:///fpds.db", echo=False)
+engine = create_engine("sqlite:///fpds.db", echo=True)
 with Session(engine) as session:
     # [X] see a list of all packages in the system
 
@@ -131,6 +132,16 @@ with Session(engine) as session:
                 f"{package.id} | {package.destination.name}, {package.destination.address}"
             )
 
+    def mark_package_delivered(package_id):
+        statement = (
+            update(Package)
+            .where(Package.id == package_id)
+            .values({Package.delivery_time: func.now()})
+        ).returning(Package)
+
+        result = session.execute(statement).first()
+        session.commit()
+
     # [X] change the status on a package
     def update_package(
         package_id, status_id, customer_id, destination_id, driver_id
@@ -204,7 +215,7 @@ with Session(engine) as session:
             )
             .returning(Destination)
         )
-
+        print(statement)
         # you have to commit the updates...
         session.commit()
 
@@ -232,3 +243,10 @@ with Session(engine) as session:
         destination = session.get(Destination, destination_id)
         for package in destination.destination_packages:
             print(f"{package.id} | {package.customer.name}")
+
+    def get_my_packages(driver_id):
+        return session.scalars(
+            select(Package)
+            .join(Package.driver)
+            .where(Package.driver_id == driver_id)
+        )
