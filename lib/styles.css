@@ -133,9 +133,9 @@ Footer {
   color: white;
 }
 #btn_logout {
-  width: 25%;
-  content-align: center middle;
-  dock: right;
+  width: 30%;
+  background: black;
+  color: white;
 }
 .package_labels {
   content-align: left middle;
@@ -156,12 +156,15 @@ BSOD {
   align: center middle;
   background: blue;
   color: white;
+  width: 100%;
 }
 
 BSOD > Static {
-  width: 70;
+  width: 70%;
 }
-
+.center {
+  content-align: center middle;
+}
 #title {
   content-align-horizontal: center;
   text-style: reverse;

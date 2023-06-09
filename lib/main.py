@@ -29,7 +29,7 @@ from textual.containers import (
 from textual.widgets import (
     Button,
     Header,
-    Footer,
+    # Footer,
     Static,
     ListView,
     ListItem,
@@ -119,8 +119,12 @@ Error: 0E : 016F : BFF9B3D4
 
     def compose(self) -> ComposeResult:
         yield Static(" Windows ", id="title")
-        yield Static(self.ERROR_TEXT)
-        yield Static("Press any key to continue [blink]_[/]", id="any-key")
+        yield Static(self.ERROR_TEXT, classes="center")
+        yield Static(
+            "Press any key to continue [blink]_[/]",
+            id="any-key",
+            classes="center",
+        )
 
 
 class CurrentDriver(Widget):
