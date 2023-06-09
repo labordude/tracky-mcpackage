@@ -25,7 +25,7 @@ from textual.containers import (
     ScrollableContainer,
     VerticalScroll,
 )
-from terminaltables import AsciiTable
+
 from textual.widgets import (
     Button,
     Header,

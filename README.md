@@ -14,7 +14,28 @@ This is a Python app to provide for package tracking and driver support within a
 - [alembic](https://github.com/sqlalchemy/alembic)
 - [faker](https://faker.readthedocs.io/en/master/)
 - [pytest](https://pytest.org)
-- [typer](https://typer.tiangolo.com/)
+- [textual](https://textual.textualize.io/)
+- [mlrose](https://mlrose.readthedocs.io/en/stable/)
+
+### Module documentation
+
+- Home
+- Driver Select that loads table of driver's current packages
+- Packages
+- View All or sort by status (tabbed windows)
+- Real-time search
+- Clicking on package opens an edit window to make changes to package, refreshes database and table on submit
+- Add new package functionality that persists to database
+- Customer
+- View and search all customers
+- Clicking on customer opens edit functionality that persists
+- can add new customer
+- Destination
+  - View and search all destinations
+  - Clicking on destination opens edit functionality that persists
+  - can add new destination
+- Best Path _beta_
+  - Uses mlrose TravellingSalesperson algorithms to generate best delivery order for driver
 
 ### Modifying the source requires the above dependencies
 
