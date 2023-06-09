@@ -103,7 +103,6 @@ class Point:
 current_driver = random.randint(1, 8)
 
 
-# BSOD easter egg
 class BSOD(Screen):
     ERROR_TEXT = """
 An error has occurred. To continue:
@@ -188,16 +187,6 @@ class ShowCustomers(Widget):
                 table.add_row(customer.id, customer.name, customer.address)
         except Exception:
             print("Whoops")
-
-    # def on_button_pressed(self, event: Button.Pressed) -> None:
-    #     customers = [customer for customer in search_by_customer(self.search)]
-    #     table = self.query_one("#customers", DataTable)
-    #     table.clear(columns=True)
-    #     table.cursor_type = "row"
-    #     table.zebra_stripes = True
-    #     table.add_columns("id", "name", "address")
-    #     for customer in customers:
-    #         table.add_row(customer.id, customer.name, customer.address)
 
     def key_c(self):
         table = self.query_one("#customers", DataTable)
@@ -734,127 +723,8 @@ class UpdatePackageLabel(Widget):
     BINDINGS = [("escape", "app.pop_screen", "Pop screen")]
     """update a package from this screen"""
 
-    # def __init__(self, row: list) -> None:
-    #     super().__init__()
-    #     self.package_id = row[0]
-    #     self.package_status = row[1]
-    #     self.package_customer = row[2]
-    #     self.package_destination = row[3]
-    #     self.package_driver = row[4]
-    #     self.row = row
-
     def compose(self) -> ComposeResult:
         yield Label("This is where you update a package")
-        # package = single_package(self.package_id).one()
-
-        # with Horizontal():
-        #     yield Label(
-        #         f"Status: {package.status.name}",
-        #         classes="package_labels",
-        #     )
-        #     yield Select(
-        #         options=(
-        #             (status.name, status.id) for status in all_statuses()
-        #         ),
-        #         id="update_status",
-        #         prompt=package.status.name,
-        #         classes="update_package_select",
-        #         value=package.status.id,
-        #     )
-        # with Horizontal():
-        #     yield Label(
-        #         f"Customer: {package.customer.name}",
-        #         classes="package_labels",
-        #     )
-
-        #     yield Select(
-        #         options=(
-        #             (
-        #                 f"{customer.name} @ {customer.address}",
-        #                 customer.id,
-        #             )
-        #             for customer in all_customers()
-        #         ),
-        #         id="update_customer",
-        #         prompt=package.customer.name,
-        #         classes="update_package_select",
-        #         value=package.customer.id,
-        #     )
-        # with Horizontal():
-        #     yield Label(
-        #         f"Destination: {package.destination.name}",
-        #         classes="package_labels",
-        #     )
-        #     yield Select(
-        #         options=(
-        #             (destination.name, destination.id)
-        #             for destination in all_destinations()
-        #         ),
-        #         id="update_destination",
-        #         classes="update_package_select",
-        #         prompt=package.destination.name,
-        #         value=package.destination.id,
-        #     )
-
-        # with Horizontal():
-        #     yield Label(
-        #         f"Driver: {package.driver.name}",
-        #         classes="package_labels",
-        #     )
-        #     yield Select(
-        #         options=(
-        #             (driver.name, driver.id) for driver in all_drivers()
-        #         ),
-        #         id="update_driver",
-        #         classes="update_package_select",
-        #         prompt=package.driver.name,
-        #         value=package.driver.id,
-        #     )
-        # with Horizontal():
-        #     yield Button(
-        #         "Update",
-        #         classes="half_screen",
-        #         variant="primary",
-        #         id="submit_update",
-        #     )
-        #     yield Button(
-        #         "Quit",
-        #         classes="half_screen",
-        #         variant="default",
-        #         id="quit_update",
-        #     )
-
-    # def on_select_changed(self, event: Select.Changed) -> None:
-    #     self.package_customer = self.query_one("#update_customer").value
-    #     self.package_destination = self.query_one(
-    #         "#update_destination"
-    #     ).value
-    #     self.package_driver = self.query_one("#update_driver").value
-    #     self.package_status = self.query_one("#update_status").value
-
-    # def on_button_pressed(self, event: Button.Pressed) -> None:
-    #     if event.button.id == "submit_update":
-    #         self.package_customer = self.query_one(
-    #             "#update_customer"
-    #         ).value
-    #         self.package_destination = self.query_one(
-    #             "#update_destination"
-    #         ).value
-    #         self.package_driver = self.query_one("#update_driver").value
-    #         self.package_status = self.query_one("#update_status").value
-    #         print(
-    #             f"{self.package_id}, {self.package_customer}, {self.package_destination}, {self.package_driver}, {self.package_status}"
-    #         )
-    #         # new_destination(name, address, address_x, address_y)
-    #         update_package(
-    #             package_id=self.package_id,
-    #             status_id=self.package_status,
-    #             customer_id=self.package_customer,
-    #             destination_id=self.package_destination,
-    #             driver_id=self.package_driver,
-    #         )
-    #     else:
-    #         self.remove()
 
 
 class ShowPackagesNew2(Widget):
@@ -1282,72 +1152,6 @@ class AddField(Widget):
             id="new_destination_coords",
         )
         yield Button("Submit Destination", id="submit_destination")
-
-
-# class ShowMyPackages(Widget):
-#     def compose(self) -> ComposeResult:
-#         yield Label(str(current_driver))
-#         yield self.CreateTable()
-
-#     def on_mount(self) -> None:
-#         packages = [package for package in my_packages(current_driver)]
-
-#         table = self.query_one("#my_packages", DataTable)
-#         table.cursor_type = "row"
-#         table.zebra_stripes = True
-#         table.add_columns("id", "customer", "destination")
-#         for package in packages:
-#             table.add_row(
-#                 package.id, package.customer.name, package.destination.name
-#             )
-
-#     class CreateTable(Widget):
-#         def compose(self) -> ComposeResult:
-#             yield DataTable(id="my_packages")
-
-#         def on_mount(self) -> None:
-#             packages = [package for package in my_packages(current_driver)]
-
-#             table = self.query_one("#my_packages", DataTable)
-#             table.cursor_type = "row"
-#             table.zebra_stripes = True
-#             table.add_columns("id", "customer", "destination")
-#             for package in packages:
-#                 table.add_row(
-#                     package.id, package.customer.name, package.destination.name
-#                 )
-
-#     # def key_c(self):
-#     #     table = self.query_one("#my_packages", DataTable)
-#     #     table.cursor_type = "row"
-
-
-# class ShowPackages(Widget):
-#     def compose(self) -> ComposeResult:
-#         yield Input(placeholder="Search...", id="search_packages")
-#         yield DataTable(id="packages")
-
-#     def on_mount(self) -> None:
-#         packages = [package for package in all_packages()]
-
-#         table = self.query_one("#packages", DataTable)
-#         table.cursor_type = "row"
-#         table.zebra_stripes = True
-#         table.add_columns("id", "customer", "destination")
-#         for package in packages:
-#             table.add_row(
-#                 package.id, package.customer.name, package.destination.name
-#             )
-
-#     def sort(self, id):
-#         return self
-
-#     async def on_input_changed(self, message: Input.Changed) -> None:
-#         pass
-
-#     def key_c(self):
-#         table = self.query_one("#packages", DataTable)
-#         table.cursor_type = "row"
 
 
 # get package delivery points
